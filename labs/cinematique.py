@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 from utils.supabase_client import supabase
 
 def run_cinematique_lab():
@@ -70,7 +72,38 @@ def run_cinematique_lab():
         st.experimental_rerun()
 
     # =======================
-    # Graphique interactif
+    # Graphiques et approximations
     # =======================
-    st.subheader("Graphique de x vs t")
-    st.line_chart(edited_df.rename(columns={"x": "Position (m)", "t": "Temps (s)"}).set_index("Temps (s)"))
+    st.subheader("Graphiques et approximations pour chaque simulation")
+
+    for sim in simulations:
+        st.markdown(f"### Simulation {sim['id']} - {sim['created_at']}")
+        df_sim = pd.DataFrame(sim["results"])
+        t_values = df_sim["t"].values
+        x_values = df_sim["x"].values
+
+        # Régression linéaire (degré 1)
+        coeffs_lin = np.polyfit(t_values, x_values, 1)  # [a, b]
+        x_lin = np.polyval(coeffs_lin, t_values)
+        eq_lin = f"x(t) ≈ {coeffs_lin[0]:.3f}·t + {coeffs_lin[1]:.3f}"
+
+        # Régression quadratique (degré 2)
+        coeffs_quad = np.polyfit(t_values, x_values, 2)  # [a, b, c]
+        x_quad = np.polyval(coeffs_quad, t_values)
+        eq_quad = f"x(t) ≈ {coeffs_quad[0]:.3f}·t² + {coeffs_quad[1]:.3f}·t + {coeffs_quad[2]:.3f}"
+
+        # Afficher les équations algébriques
+        st.markdown(f"**Approximation linéaire :** {eq_lin}")
+        st.markdown(f"**Approximation quadratique :** {eq_quad}")
+
+        # Graphique matplotlib
+        fig, ax = plt.subplots()
+        ax.plot(t_values, x_values, "o", label="Données brutes")
+        ax.plot(t_values, x_lin, "-", label="Approx. linéaire")
+        ax.plot(t_values, x_quad, "--", label="Approx. quadratique")
+        ax.set_xlabel("Temps (s)")
+        ax.set_ylabel("Position (m)")
+        ax.set_title("Position en fonction du temps")
+        ax.grid(True)
+        ax.legend()
+        st.pyplot(fig)

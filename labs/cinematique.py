@@ -5,16 +5,17 @@ from utils.supabase_client import supabase
 def run_cinematique_lab():
     st.header("Laboratoire Cinématique 1D - Données brutes")
 
+    # =======================
+    # Ajouter de nouvelles mesures
+    # =======================
+    st.subheader("Ajouter de nouvelles mesures")
     st.write("Entrez vos mesures de position x (m) et temps t (s).")
 
-    # Créer des listes vides pour stocker les entrées
     x_list = []
     t_list = []
 
-    # Nombre de mesures à entrer
-    n = st.number_input("Nombre de mesures", min_value=2, max_value=50, value=5, step=1)
+    n = st.number_input("Nombre de mesures à entrer", min_value=2, max_value=50, value=5, step=1)
 
-    # Entrée des mesures
     for i in range(n):
         col1, col2 = st.columns(2)
         with col1:
@@ -24,19 +25,41 @@ def run_cinematique_lab():
         x_list.append(x_val)
         t_list.append(t_val)
 
-    # Bouton pour envoyer les données
     if st.button("Envoyer les données brutes"):
-        # Préparer le JSON à stocker
-        data_brute = {
-            "x": x_list,
-            "t": t_list
-        }
-
-        # Envoyer sur Supabase
+        data_brute = {"x": x_list, "t": t_list}
         supabase.table("cinematique_brute").insert({"results": data_brute}).execute()
         st.success("Données brutes envoyées sur Supabase ! ✅")
 
-        # Afficher les données
-        df = pd.DataFrame(data_brute)
-        st.dataframe(df)
-        st.line_chart(df)
+    # =======================
+    # Gérer les données existantes
+    # =======================
+    st.subheader("Modifier / Supprimer des simulations existantes")
+
+    response = supabase.table("cinematique_brute").select("*").execute()
+    simulations = response.data
+
+    if not simulations:
+        st.info("Aucune simulation trouvée.")
+        return
+
+    # Sélectionner une simulation
+    sim_options = [f"Simulation {sim['id']} - {sim['created_at']}" for sim in simulations]
+    selected_sim = st.selectbox("Choisissez une simulation à modifier", sim_options)
+    sim_index = sim_options.index(selected_sim)
+    sim_data = simulations[sim_index]
+
+    # Afficher les données dans un DataFrame éditable
+    df = pd.DataFrame(sim_data["results"])
+    edited_df = st.data_editor(df, num_rows="dynamic")  # permet modifier ou ajouter des lignes
+
+    # Bouton pour sauvegarder les modifications
+    if st.button("Sauvegarder les modifications", key="save_mod"):
+        updated_data = edited_df.to_dict(orient="list")
+        supabase.table("cinematique_brute").update({"results": updated_data}).eq("id", sim_data["id"]).execute()
+        st.success("Données mises à jour avec succès ! ✅")
+
+    # Bouton pour supprimer la simulation
+    if st.button("Supprimer cette simulation", key="delete_sim"):
+        supabase.table("cinematique_brute").delete().eq("id", sim_data["id"]).execute()
+        st.success("Simulation supprimée ✅")
+        st.experimental_rerun()  # rafraîchit la page pour voir les changements

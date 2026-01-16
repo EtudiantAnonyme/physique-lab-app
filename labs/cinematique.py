@@ -25,7 +25,7 @@ def run_cinematique_lab():
         x_list.append(x_val)
         t_list.append(t_val)
 
-    if st.button("Envoyer les données brutes"):
+    if st.button("Envoyer les données brutes", key="send_new"):
         data_brute = {"x": x_list, "t": t_list}
         supabase.table("cinematique_brute").insert({"results": data_brute}).execute()
         st.success("Données brutes envoyées sur Supabase ! ✅")
@@ -62,4 +62,15 @@ def run_cinematique_lab():
     if st.button("Supprimer cette simulation", key="delete_sim"):
         supabase.table("cinematique_brute").delete().eq("id", sim_data["id"]).execute()
         st.success("Simulation supprimée ✅")
-        st.experimental_rerun()  # rafraîchit la page pour voir les changements
+        st.session_state['rerun'] = True  # pour éviter l'erreur rerun
+
+    # Rafraîchir la page après suppression
+    if st.session_state.get('rerun', False):
+        st.session_state['rerun'] = False
+        st.experimental_rerun()
+
+    # =======================
+    # Graphique interactif
+    # =======================
+    st.subheader("Graphique de x vs t")
+    st.line_chart(edited_df.rename(columns={"x": "Position (m)", "t": "Temps (s)"}).set_index("Temps (s)"))

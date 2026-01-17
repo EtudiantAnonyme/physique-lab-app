@@ -86,84 +86,84 @@ def run_cinematique_lab():
     # =======================
 # Graphiques et approximations (GUI moderne)
 # =======================
-st.subheader("Graphiques et approximations (moindres carrés)")
+    st.subheader("Graphiques et approximations (moindres carrés)")
 
-for sim in simulations:
-    st.markdown(f"### Simulation {sim['id']}")
+    for sim in simulations:
+        st.markdown(f"### Simulation {sim['id']}")
 
-    df_sim = pd.DataFrame(sim["results"]).sort_values("t")
+        df_sim = pd.DataFrame(sim["results"]).sort_values("t")
 
-    t = df_sim["t"].values
-    x = df_sim["x"].values
+        t = df_sim["t"].values
+        x = df_sim["x"].values
 
-    # Domaine continu pour courbes lisses
-    t_smooth = np.linspace(t.min(), t.max(), 300)
+        # Domaine continu pour courbes lisses
+        t_smooth = np.linspace(t.min(), t.max(), 300)
 
-    # Régression linéaire
-    a1, b1 = np.polyfit(t, x, 1)
-    x_lin_smooth = a1 * t_smooth + b1
+        # Régression linéaire
+        a1, b1 = np.polyfit(t, x, 1)
+        x_lin_smooth = a1 * t_smooth + b1
 
-    # Régression quadratique
-    a2, b2, c2 = np.polyfit(t, x, 2)
-    x_quad_smooth = a2 * t_smooth**2 + b2 * t_smooth + c2
+        # Régression quadratique
+        a2, b2, c2 = np.polyfit(t, x, 2)
+        x_quad_smooth = a2 * t_smooth**2 + b2 * t_smooth + c2
 
-    # --------- STYLE MODERNE ---------
-    fig, ax = plt.subplots(figsize=(6, 4))  # graphique plus compact
+        # --------- STYLE MODERNE ---------
+        fig, ax = plt.subplots(figsize=(6, 4))  # graphique plus compact
 
-    # Points expérimentaux (plus petits, sobres)
-    ax.scatter(
-        t, x,
-        s=25,
-        color="#1f2937",   # gris foncé moderne
-        alpha=0.8,
-        label="Données expérimentales",
-        zorder=3
-    )
-
-    # Approximation linéaire (fine)
-    ax.plot(
-        t_smooth, x_lin_smooth,
-        linewidth=2,
-        color="#2563eb",
-        label="Approximation linéaire"
-    )
-
-    # Approximation quadratique (smooth + élégante)
-    ax.plot(
-        t_smooth, x_quad_smooth,
-        linewidth=2.5,
-        color="#dc2626",
-        linestyle="-",
-        label="Approximation quadratique"
-    )
-
-    # Axes & style
-    ax.set_xlabel("Temps (s)")
-    ax.set_ylabel("Position (m)")
-    ax.set_title("Cinématique 1D : x(t)", fontsize=12)
-
-    ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.4)
-    ax.legend(frameon=False)
-
-    # Boîte d'équations (clean)
-    eq_text = (
-        f"x(t) ≈ {a1:.3f} t + {b1:.3f}\n"
-        f"x(t) ≈ {a2:.3f} t² + {b2:.3f} t + {c2:.3f}"
-    )
-
-    ax.text(
-        0.02, 0.96,
-        eq_text,
-        transform=ax.transAxes,
-        fontsize=9,
-        verticalalignment="top",
-        bbox=dict(
-            boxstyle="round,pad=0.4",
-            facecolor="white",
-            edgecolor="none",
-            alpha=0.85
+        # Points expérimentaux (plus petits, sobres)
+        ax.scatter(
+            t, x,
+            s=25,
+            color="#1f2937",   # gris foncé moderne
+            alpha=0.8,
+            label="Données expérimentales",
+            zorder=3
         )
-    )
 
-    st.pyplot(fig)
+        # Approximation linéaire (fine)
+        ax.plot(
+            t_smooth, x_lin_smooth,
+            linewidth=2,
+            color="#2563eb",
+            label="Approximation linéaire"
+        )
+
+        # Approximation quadratique (smooth + élégante)
+        ax.plot(
+            t_smooth, x_quad_smooth,
+            linewidth=2.5,
+            color="#dc2626",
+            linestyle="-",
+            label="Approximation quadratique"
+        )
+
+        # Axes & style
+        ax.set_xlabel("Temps (s)")
+        ax.set_ylabel("Position (m)")
+        ax.set_title("Cinématique 1D : x(t)", fontsize=12)
+
+        ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.4)
+        ax.legend(frameon=False)
+
+        # Boîte d'équations (clean)
+        eq_text = (
+            f"x(t) ≈ {a1:.3f} t + {b1:.3f}\n"
+            f"x(t) ≈ {a2:.3f} t² + {b2:.3f} t + {c2:.3f}"
+        )
+
+        ax.text(
+            0.02, 0.96,
+            eq_text,
+            transform=ax.transAxes,
+            fontsize=9,
+            verticalalignment="top",
+            bbox=dict(
+                boxstyle="round,pad=0.4",
+                facecolor="white",
+                edgecolor="none",
+                alpha=0.85
+            )
+        )
+
+        st.pyplot(fig)
 

@@ -1,5 +1,6 @@
 import streamlit as st
 from labs.cinematique import run_cinematique_lab
+from labs.cinematique_2D import run_cinematique_2D_lab
 
 st.set_page_config(
     page_title="Application laboratoire en physique",
@@ -14,7 +15,7 @@ Ce site vise à fournir des ressources et des applications interactives pour fac
 """)
 
 st.sidebar.header("Navigation")
-pages = ["Accueil", "Cinématique 1D"]
+pages = ["Accueil", "Cinématique 1D", "Cinématique 2D"]
 page_choice = st.sidebar.selectbox("Choisissez une page", pages)
 
 if page_choice == "Accueil":
@@ -29,3 +30,5 @@ if page_choice == "Accueil":
     st.info("Pour l'instant, seule la page d'accueil est disponible. Les expériences seront ajoutées prochainement.")
 elif page_choice == "Cinématique 1D":
     run_cinematique_lab()
+elif page_choice == "Cinématique 2D":
+    run_cinematique_2D_lab()  

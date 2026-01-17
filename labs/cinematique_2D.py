@@ -116,9 +116,30 @@ def run_cinematique_2D_lab():
         x_vals = np.array(df["x"])
         y_vals = np.array(df["y"])
 
-        # ---- Ajustements ----
-        ax, bx = np.polyfit(t_vals, x_vals, 1)   # Linéaire x(t)
-        ay, by, cy = np.polyfit(t_vals, y_vals, 2)  # Quadratique y(t)
+        # Vérifier si un angle de lancement est fourni
+        theta = results.get("theta")
+        if theta is not None:
+            theta_rad = np.deg2rad(theta)
+            delta_x = x_vals[-1] - x_vals[0]
+            delta_t = t_vals[-1] - t_vals[0]
+            if delta_t == 0:
+                st.warning(f"Simulation {sim_id} : delta_t = 0, impossible de calculer v0")
+                continue
+            v0 = delta_x / (delta_t * np.cos(theta_rad))
+            v0x = v0 * np.cos(theta_rad)
+            v0y = v0 * np.sin(theta_rad)
+            # Ajuster y_fit pour correspondre à la formule balistique
+            g_exp = -2 * ((y_vals[-1] - y_vals[0] - v0y * delta_t) / (delta_t**2))
+            cy = y_vals[0]
+            ay = -g_exp / 2
+            by = v0y
+            ax = v0x
+            bx = x_vals[0]
+        else:
+            # ---- Ajustements classiques si pas d'angle
+            ax, bx = np.polyfit(t_vals, x_vals, 1)   # Linéaire x(t)
+            ay, by, cy = np.polyfit(t_vals, y_vals, 2)  # Quadratique y(t)
+            g_exp = -2 * ay
 
         x_fit = ax * t_vals + bx
         y_fit = ay * t_vals**2 + by * t_vals + cy
@@ -126,32 +147,18 @@ def run_cinematique_2D_lab():
         r2_x = 1 - np.sum((x_vals - x_fit)**2) / np.sum((x_vals - np.mean(x_vals))**2)
         r2_y = 1 - np.sum((y_vals - y_fit)**2) / np.sum((y_vals - np.mean(y_vals))**2)
 
-        # ---- Graphique ----
+        # ---- Graphique trajectoire ----
         t_smooth = np.linspace(t_vals.min(), t_vals.max(), 300)
-        x_smooth = ax * t_smooth + bx
-        y_smooth = ay * t_smooth**2 + by * t_smooth + cy
+        if theta is not None:
+            x_smooth = v0x * t_smooth + bx
+            y_smooth = v0y * t_smooth - 0.5 * g_exp * t_smooth**2 + cy
+        else:
+            x_smooth = ax * t_smooth + bx
+            y_smooth = ay * t_smooth**2 + by * t_smooth + cy
 
         fig, ax_plot = plt.subplots(figsize=(6, 4))
         ax_plot.scatter(x_vals, y_vals, color="#1f2937", s=25, label="Données expérimentales")
         ax_plot.plot(x_smooth, y_smooth, color="crimson", linestyle="--", linewidth=2, label="Fit quadratique")
-
-        # ---- Analyse théorique si angle connu ----
-        theta_deg = results.get("theta")
-        if sim_type == "projectile/_catapulte" and theta_deg is not None:
-            theta_rad = np.radians(theta_deg)
-            v0x = ax
-            v0y = v0x * np.tan(theta_rad)
-            y0 = cy
-            g_theo = -2 * ay
-
-            x_theo = v0x * t_smooth
-            y_theo = v0y * t_smooth - 0.5 * g_theo * t_smooth**2 + y0
-
-            ax_plot.plot(x_theo, y_theo, color="green", linestyle="-.", linewidth=2, label="Théorie angle")
-            st.markdown("### ⚡ Analyse théorique avec angle connu")
-            st.write(f"Angle θ = {theta_deg}°")
-            st.write(f"v0x théorique = {v0x:.3f} m/s, v0y théorique = {v0y:.3f} m/s, y0 = {y0:.3f} m, g = {g_theo:.3f} m/s²")
-
         ax_plot.set_xlabel("x (m)")
         ax_plot.set_ylabel("y (m)")
         ax_plot.set_title("Trajectoire du projectile")
@@ -163,7 +170,6 @@ def run_cinematique_2D_lab():
         st.pyplot(fig)
 
         # ---- Extraction des paramètres physiques ----
-        g_exp = -2 * ay
         st.markdown("### ⚡ Paramètres physiques expérimentaux")
         st.write(f"v0x_exp = {ax:.3f} m/s, v0y_exp = {by:.3f} m/s, y0_exp = {cy:.3f} m, g_exp = {g_exp:.3f} m/s²")
 
@@ -178,18 +184,25 @@ def run_cinematique_2D_lab():
         st.latex(rf"y(t) = {ay:.3f} t^2 + {by:.3f} t + {cy:.3f}")
         st.latex(rf"a_y = 2 * {ay:.3f} = {g_exp:.3f} m/s²")
 
-        # ---- Calcul pour un temps spécifique
+        # ---- Substitution pour un temps spécifique
         st.subheader("⏱ Calcul pour un temps spécifique")
         t_input = st.number_input(f"Entrer un temps t (s) pour simulation {sim_id}", value=float(t_vals[-1]), step=0.1, key=f"t_calc_{sim_id}")
 
-        x_t = ax * t_input + bx
-        y_t = ay * t_input**2 + by * t_input + cy
-        vx_t = ax
-        vy_t = 2 * ay * t_input + by
+        if theta is not None:
+            x_t = v0x * t_input + bx
+            y_t = v0y * t_input - 0.5 * g_exp * t_input**2 + cy
+            vx_t = v0x
+            vy_t = v0y - g_exp * t_input
+        else:
+            x_t = ax * t_input + bx
+            y_t = ay * t_input**2 + by * t_input + cy
+            vx_t = ax
+            vy_t = 2 * ay * t_input + by
+
         ay_t = 2 * ay
 
-        st.latex(rf"x({t_input}) = {ax:.3f} * {t_input} + {bx:.3f} = {x_t:.3f}")
-        st.latex(rf"y({t_input}) = {ay:.3f} * {t_input}^2 + {by:.3f} * {t_input} + {cy:.3f} = {y_t:.3f}")
+        st.latex(rf"x({t_input}) = {x_t:.3f} m")
+        st.latex(rf"y({t_input}) = {y_t:.3f} m")
         st.latex(rf"v_x({t_input}) = {vx_t:.3f} m/s")
-        st.latex(rf"v_y({t_input}) = 2 * {ay:.3f} * {t_input} + {by:.3f} = {vy_t:.3f} m/s")
+        st.latex(rf"v_y({t_input}) = {vy_t:.3f} m/s")
         st.latex(rf"a_y({t_input}) = {ay_t:.3f} m/s²")

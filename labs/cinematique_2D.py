@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from utils.supabase_client import supabase
+import io
+import json
 
 def run_cinematique_2D_lab():
     st.set_page_config(
@@ -75,6 +77,23 @@ def run_cinematique_2D_lab():
             }
         }).execute()
         st.success("✅ Données enregistrées sur Supabase")
+
+    st.divider()
+
+    st.subheader("💾 Exporter les données")
+    df_export = pd.DataFrame({
+        "t (s)": t_vals,
+        "x (m)": x_vals,
+        "y (m)": y_vals
+    })
+
+    json_data = json.dumps(results, indent=4)
+    st.download_button(
+        label="Télécharger les données (JSON)",
+        data=json_data,
+        file_name=f"simulation_{sim_id}_data.json",
+        mime="application/json"
+    )
 
     st.divider()
 
@@ -159,6 +178,16 @@ def run_cinematique_2D_lab():
                  rf"v_{{0y}} = {v0y:.3f}\ \mathrm{{m/s}}, "
                  rf"y_0 = {cy:.3f}\ \mathrm{{m}}, "
                  rf"g = {g_exp:.3f}\ \mathrm{{m/s^2}}")
+        
+        buf = io.BytesIO()
+        fig.savefig(buf, format="png")
+        buf.seek(0)
+        st.download_button(
+            label="Télécharger le graphique de trajectoire",
+            data=buf,
+            file_name=f"simulation_{sim_id}_trajectory.png",
+            mime="image/png"
+        )
 
         # ---- Calcul différentiel
         st.subheader("📐 Calculs différentielles détaillés")

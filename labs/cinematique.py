@@ -3,11 +3,12 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from utils.supabase_client import supabase
+import io
 
 def run_cinematique_lab():
     st.set_page_config(
         page_title="Laboratoire Cinématique 1D",
-        page_icon="🧪",
+        page_icon="🏃",
         layout="wide"
     )
 
@@ -89,16 +90,38 @@ def run_cinematique_lab():
     x_quad_smooth = a2*t_smooth**2 + b2*t_smooth + c2
 
     fig, ax = plt.subplots(figsize=(6, 4))
-    ax.scatter(t_vals, x_vals, s=25, color="#1f2937", label="Données expérimentales")
-    ax.plot(t_smooth, x_lin_smooth, linewidth=2, color="royalblue", label="Approximation linéaire")
-    ax.plot(t_smooth, x_quad_smooth, linewidth=2.5, color="crimson", linestyle="--", label="Approximation quadratique")
+    ax.scatter(t_vals, x_vals, s=20, color="#1f2937")
+    ax.plot(t_smooth, x_lin_smooth, linewidth=1.5, color="royalblue", alpha=0.7, label="Approximation linéaire")
+    ax.plot(t_smooth, x_quad_smooth, linewidth=1.5, color="red", alpha=0.9, label="Approximation quadratique")
     ax.set_xlabel("Temps (s)")
     ax.set_ylabel("Position (m)")
     ax.set_title("Position en fonction du temps")
     ax.grid(True, linestyle="--", alpha=0.4)
     ax.legend(frameon=False)
+    ax.text(
+        0.95, 0.05,  # position (x=95% largeur, y=5% hauteur)
+        f"R² linéaire = {r2_lin:.4f}\nR² quadratique = {r2_quad:.4f}",
+        transform=ax.transAxes,
+        fontsize=10,
+        color="black",
+        verticalalignment='bottom',
+        horizontalalignment='right',
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.6)
+    )
+
     st.pyplot(fig)
 
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", bbox_inches="tight")
+    buf.seek(0)
+
+    # Bouton de téléchargement
+    st.download_button(
+        label="📥 Télécharger le graphique",
+        data=buf,
+        file_name=f"graphique_simulation_{sim_id}.png",
+        mime="image/png"
+    )
     st.markdown("**Qualité de l’ajustement (R²) :**")
     st.write(f"Linéaire : R² = {r2_lin:.4f}")
     st.write(f"Quadratique : R² = {r2_quad:.4f}")

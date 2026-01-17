@@ -259,27 +259,30 @@ def run_mouvement_circulaire_lab():
                 idx = (np.abs(np.array(results["theta"]) - theta_deg)).argmin()
                 st.write(f"v ≈ {v_arr[idx]:.3f} m/s, ω ≈ {omega_arr[idx]:.3f} rad/s")
 
-        # ---- Surprise 🎁 : Animation de la particule suivant la trajectoire mesurée
-        st.subheader("🎬 Animation de la particule en rotation (3D temps)")
+        # ---- Surprise 🎁 : Animation de la particule suivant la trajectoire lisse
+        st.subheader("🎬 Animation de la particule en rotation (smooth)")
 
-        # Récupération des données de la trajectoire
+        from scipy.interpolate import CubicSpline
+
+        # Récupération des données
         t_arr = np.array(df["t"])
         x_arr = np.array(df["x"])
         y_arr = np.array(df["y"])
 
-        # Interpolation pour smooth animation
+        # ---- Interpolation spline pour trajectoire lisse
         t_smooth = np.linspace(t_arr.min(), t_arr.max(), 500)
-        x_smooth = np.interp(t_smooth, t_arr, x_arr)
-        y_smooth = np.interp(t_smooth, t_arr, y_arr)
+        cs_x = CubicSpline(t_arr, x_arr)
+        cs_y = CubicSpline(t_arr, y_arr)
+        x_smooth = cs_x(t_smooth)
+        y_smooth = cs_y(t_smooth)
 
         # Gradient de couleur basé sur le temps
         colors = t_smooth / t_smooth.max()
 
-        # Création du graphique Plotly 2D avec animation
-
-        # Trace principale : trajectoire complète
+        # ---- Création du graphique Plotly
         fig_anim = go.Figure()
 
+        # Trajectoire complète en gris clair
         fig_anim.add_trace(go.Scatter(
             x=x_smooth,
             y=y_smooth,
@@ -293,11 +296,11 @@ def run_mouvement_circulaire_lab():
             x=[x_smooth[0]],
             y=[y_smooth[0]],
             mode='markers',
-            marker=dict(size=10, color='red'),
+            marker=dict(size=12, color='red'),
             name='Particule'
         ))
 
-        # Création des frames pour l'animation
+        # ---- Frames pour l'animation
         frames = [go.Frame(
             data=[go.Scatter(x=[x_smooth[k]], y=[y_smooth[k]], mode='markers')],
             name=str(k)
@@ -305,11 +308,11 @@ def run_mouvement_circulaire_lab():
 
         fig_anim.frames = frames
 
-        # Boutons Play/Pause
+        # ---- Boutons Play / Pause
         fig_anim.update_layout(
             xaxis=dict(range=[x_smooth.min()*1.2, x_smooth.max()*1.2], title="x (m)"),
             yaxis=dict(range=[y_smooth.min()*1.2, y_smooth.max()*1.2], title="y (m)"),
-            title="Animation de la particule suivant la trajectoire",
+            title="Animation de la particule suivant la trajectoire lisse",
             height=500,
             width=500,
             updatemenus=[dict(

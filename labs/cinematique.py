@@ -151,26 +151,26 @@ def run_cinematique_lab():
         col3.metric("Accélération a(t)", f"{a_calc:.3f} m/s²")
 
         st.divider()
+    # -------------------
+    # MODIFIER / SUPPRIMER LES DONNÉES
+    # -------------------
+    st.subheader("Modifier / Supprimer cette simulation")
+    edited_df = st.data_editor(
+        df,
+        num_rows="dynamic",
+        key=f"editor_{sim_id}"
+    )
 
-        # =======================
-        # MODIFIER / SUPPRIMER LES DONNÉES
-        # =======================
-        st.subheader("Modifier / Supprimer cette simulation")
-        edited_df = st.data_editor(
-            df,
-            num_rows="dynamic",
-            key=f"editor_{sim_id}"
-        )
+    # Sauvegarder
+    if st.button("Sauvegarder les modifications", key=f"save_{sim_id}"):
+        updated_data = edited_df.to_dict(orient="list")
+        supabase.table("cinematique_brute").update({"results": updated_data}).eq("id", sim_id).execute()
+        st.success("Simulation mise à jour ✅")
+        st.experimental_rerun()  # OK ici, juste après le bouton
 
-        # Sauvegarder
-        if st.button("Sauvegarder les modifications", key=f"save_{sim_id}"):
-            updated_data = edited_df.to_dict(orient="list")
-            supabase.table("cinematique_brute").update({"results": updated_data}).eq("id", sim_id).execute()
-            st.success("Simulation mise à jour ✅")
-            st.experimental_rerun()
+    # Supprimer
+    if st.button("Supprimer cette simulation", key=f"delete_{sim_id}"):
+        supabase.table("cinematique_brute").delete().eq("id", sim_id).execute()
+        st.success("Simulation supprimée ✅")
+        st.experimental_rerun()  # OK ici aussi
 
-        # Supprimer
-        if st.button("Supprimer cette simulation", key=f"delete_{sim_id}"):
-            supabase.table("cinematique_brute").delete().eq("id", sim_id).execute()
-            st.success("Simulation supprimée ✅")
-            st.experimental_rerun()

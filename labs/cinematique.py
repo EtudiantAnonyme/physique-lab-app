@@ -5,20 +5,30 @@ import matplotlib.pyplot as plt
 from utils.supabase_client import supabase
 
 def run_cinematique_lab():
-    st.header("Laboratoire de cinématique 1D — Données brutes et analyse")
-
-    # =======================
-    # AJOUT DE DONNÉES BRUTES
-    # =======================
-    st.subheader("Ajouter des mesures expérimentales")
-
-    n = st.number_input(
-        "Nombre de mesures",
-        min_value=2,
-        max_value=50,
-        value=5,
-        step=1
+    st.set_page_config(
+        page_title="Laboratoire Cinématique 1D",
+        page_icon="🧪",
+        layout="wide"
     )
+
+    st.title("🧪 Laboratoire Cinématique 1D — Cégep Montmorency")
+
+    st.markdown("""
+    Cette application permet de :
+    - Enregistrer et gérer des mesures expérimentales
+    - Ajuster des modèles linéaires et quadratiques
+    - Visualiser graphiquement les résultats
+    - Calculer vitesse et accélération
+    - Tester différents temps ou valeurs pour comprendre les phénomènes cinématiques
+    """)
+
+    st.divider()
+
+    # =======================
+    # 1️⃣ AJOUT DE DONNÉES BRUTES
+    # =======================
+    st.header("1️⃣ Ajouter des mesures expérimentales")
+    n = st.number_input("Nombre de mesures", min_value=2, max_value=50, value=5, step=1)
 
     x_list, t_list = [], []
 
@@ -32,16 +42,15 @@ def run_cinematique_lab():
         t_list.append(t)
 
     if st.button("Enregistrer les données brutes"):
-        supabase.table("cinematique_brute").insert({
-            "results": {"t": t_list, "x": x_list}
-        }).execute()
-        st.success("Données enregistrées avec succès ✅")
+        supabase.table("cinematique_brute").insert({"results": {"t": t_list, "x": x_list}}).execute()
+        st.success("✅ Données enregistrées sur Supabase")
 
     st.divider()
 
     # =======================
-    # RÉCUPÉRATION DES DONNÉES
+    # 2️⃣ RÉCUPÉRATION DES DONNÉES
     # =======================
+    st.header("2️⃣ Gestion des simulations")
     response = supabase.table("cinematique_brute").select("*").execute()
     simulations = response.data
 
@@ -50,7 +59,7 @@ def run_cinematique_lab():
         return
 
     # =======================
-    # AFFICHAGE PAR SIMULATION
+    # 3️⃣ ANALYSE D'UNE SIMULATION
     # =======================
     for sim in simulations:
         sim_id = sim["id"]
@@ -58,119 +67,121 @@ def run_cinematique_lab():
 
         df = pd.DataFrame(sim["results"])
         df = df.sort_values("t")
-
         t_vals = df["t"].values
         x_vals = df["x"].values
 
-        # =======================
-        # APPROXIMATIONS
-        # =======================
-        # linéaire
+        # ---- Ajustement Linéaire ----
         a1, b1 = np.polyfit(t_vals, x_vals, 1)
-        # quadratique
-        a2, b2, c2 = np.polyfit(t_vals, x_vals, 2)
+        x_lin_fit = a1 * t_vals + b1
+        r2_lin = 1 - np.sum((x_vals - x_lin_fit)**2) / np.sum((x_vals - np.mean(x_vals))**2)
 
-        # Générer des points smooth pour le graphique
+        # ---- Ajustement Quadratique ----
+        a2, b2, c2 = np.polyfit(t_vals, x_vals, 2)
+        x_quad_fit = a2 * t_vals**2 + b2 * t_vals + c2
+        r2_quad = 1 - np.sum((x_vals - x_quad_fit)**2) / np.sum((x_vals - np.mean(x_vals))**2)
+
+        # ---- Graphique moderne ----
         t_smooth = np.linspace(t_vals.min(), t_vals.max(), 300)
         x_lin_smooth = a1 * t_smooth + b1
         x_quad_smooth = a2 * t_smooth**2 + b2 * t_smooth + c2
 
-        # =======================
-        # GRAPHIQUE MODERNE
-        # =======================
         fig, ax = plt.subplots(figsize=(6, 4))
-
-        # points expérimentaux
-        ax.scatter(t_vals, x_vals, s=25, color="#1f2937", label="Données expérimentales", zorder=3)
-        # approx linéaire
+        ax.scatter(t_vals, x_vals, s=25, color="#1f2937", label="Données expérimentales")
         ax.plot(t_smooth, x_lin_smooth, linewidth=2, color="royalblue", label="Approximation linéaire")
-        # approx quadratique
         ax.plot(t_smooth, x_quad_smooth, linewidth=2.5, color="crimson", linestyle="--", label="Approximation quadratique")
-
         ax.set_xlabel("Temps (s)")
         ax.set_ylabel("Position (m)")
         ax.set_title("Position en fonction du temps")
         ax.grid(True, linestyle="--", alpha=0.4)
         ax.legend(frameon=False)
-
         st.pyplot(fig)
 
-        # =======================
-        # AFFICHAGE DES FORMULES
-        # =======================
-        st.subheader("Modèle mathématique expérimental")
+        # ---- Formules et dérivées ----
+        st.subheader("3️⃣ Modèle mathématique et dérivées")
+        st.markdown("**Fonction quadratique ajustée :**")
         st.latex(rf"x(t) = {a2:.3f} t^2 + {b2:.3f} t + {c2:.3f}")
-
-        st.subheader("Calcul différentiel")
-        st.markdown("**Vitesse (dérivée première)**")
-        st.latex(r"v(t) = \frac{dx}{dt}")
-        st.latex(rf"v(t) = \frac{{d}}{{dt}} ({a2:.3f} t^2 + {b2:.3f} t + {c2:.3f})")
+        st.markdown("**Vitesse et accélération calculées à partir du modèle :**")
+        st.latex(r"v(t) = \frac{dx}{dt} = 2 a t + b")
         st.latex(rf"v(t) = {2*a2:.3f} t + {b2:.3f}")
-
-        st.markdown("**Accélération (dérivée seconde)**")
-        st.latex(r"a(t) = \frac{d^2x}{dt^2}")
-        st.latex(rf"a(t) = \frac{{d}}{{dt}} ({2*a2:.3f} t + {b2:.3f})")
+        st.latex(r"a(t) = \frac{d^2x}{dt^2} = 2 a")
         st.latex(rf"a(t) = {2*a2:.3f}")
 
+        # ---- Coefficient R² ----
+        st.markdown("**Qualité de l’ajustement :**")
+        st.write(f"Linéaire : R² = {r2_lin:.4f}")
+        st.write(f"Quadratique : R² = {r2_quad:.4f}")
+
         # =======================
-        # TABLEAU CINÉMATIQUE
+        # 4️⃣ Tableau cinématique
         # =======================
-        st.subheader("Tableau cinématique basé sur le modèle")
+        st.subheader("4️⃣ Tableau cinématique")
         v_model = 2 * a2 * t_vals + b2
         a_model = np.full_like(t_vals, 2 * a2)
-
         df_phys = pd.DataFrame({
             "t (s)": t_vals,
             "x(t) (m)": x_vals,
             "v(t) (m/s)": v_model,
             "a(t) (m/s²)": a_model
         })
-
         st.dataframe(df_phys, use_container_width=True)
 
         # =======================
-        # CALCULATRICE CINÉMATIQUE
+        # 5️⃣ Calculatrice cinématique
         # =======================
-        st.subheader("Calculatrice : obtenir x, v, a pour un temps donné")
+        st.subheader("5️⃣ Calculatrice interactive")
 
-        t_input = st.number_input(
-            "Entrer un temps t (s)",
-            min_value=float(t_vals.min()),
-            max_value=float(t_vals.max()),
-            step=0.1,
-            key=f"calc_{sim_id}"
-        )
-
+        st.markdown("Vous pouvez calculer x, v, a pour un temps donné, même en dehors des mesures expérimentales.")
+        t_input = st.number_input("Entrer un temps t (s)", value=float(t_vals[-1]), step=0.1, key=f"t_calc_{sim_id}")
         x_calc = a2 * t_input**2 + b2 * t_input + c2
         v_calc = 2 * a2 * t_input + b2
         a_calc = 2 * a2
-
         col1, col2, col3 = st.columns(3)
         col1.metric("Position x(t)", f"{x_calc:.3f} m")
         col2.metric("Vitesse v(t)", f"{v_calc:.3f} m/s")
         col3.metric("Accélération a(t)", f"{a_calc:.3f} m/s²")
 
+        st.markdown("**Explication des calculs :**")
+        st.latex(r"x(t) = a t^2 + b t + c")
+        st.latex(r"v(t) = dx/dt = 2 a t + b")
+        st.latex(r"a(t) = d^2x/dt^2 = 2 a")
+
+        # =======================
+        # 6️⃣ Inverser : calculer t à partir de x ou v
+        # =======================
+        st.subheader("6️⃣ Calculer le temps à partir de x ou v")
+
+        option = st.selectbox("Choisir la variable connue", ["Position x(t)", "Vitesse v(t)"])
+        input_val = st.number_input("Entrer la valeur", value=0.0, step=0.1, key=f"inverse_{sim_id}")
+
+        if option == "Position x(t)":
+            # Quadratique : solve a t^2 + b t + c - x = 0
+            coeffs = [a2, b2, c2 - input_val]
+            t_solutions = np.roots(coeffs)
+            t_solutions = t_solutions[np.isreal(t_solutions)].real
+            st.write(f"Temps possibles : {t_solutions}")
+            st.markdown("**Calcul effectué :** résolution de a t² + b t + c = x")
+
+        elif option == "Vitesse v(t)":
+            # Linéaire : solve 2 a t + b - v = 0
+            t_sol = (input_val - b2) / (2 * a2)
+            st.write(f"Temps : {t_sol:.3f} s")
+            st.markdown("**Calcul effectué :** résolution de v = 2 a t + b")
+
         st.divider()
-    # -------------------
-    # MODIFIER / SUPPRIMER LES DONNÉES
-    # -------------------
-    st.subheader("Modifier / Supprimer cette simulation")
-    edited_df = st.data_editor(
-        df,
-        num_rows="dynamic",
-        key=f"editor_{sim_id}"
-    )
 
-    # Sauvegarder
-    if st.button("Sauvegarder les modifications", key=f"save_{sim_id}"):
-        updated_data = edited_df.to_dict(orient="list")
-        supabase.table("cinematique_brute").update({"results": updated_data}).eq("id", sim_id).execute()
-        st.success("Simulation mise à jour ✅")
-        st.experimental_rerun()  # OK ici, juste après le bouton
+        # =======================
+        # 7️⃣ Modifier / Supprimer
+        # =======================
+        st.subheader("7️⃣ Modifier / Supprimer cette simulation")
+        edited_df = st.data_editor(df, num_rows="dynamic", key=f"editor_{sim_id}")
 
-    # Supprimer
-    if st.button("Supprimer cette simulation", key=f"delete_{sim_id}"):
-        supabase.table("cinematique_brute").delete().eq("id", sim_id).execute()
-        st.success("Simulation supprimée ✅")
-        st.experimental_rerun()  # OK ici aussi
+        if st.button("Sauvegarder modifications", key=f"save_{sim_id}"):
+            updated_data = edited_df.to_dict(orient="list")
+            supabase.table("cinematique_brute").update({"results": updated_data}).eq("id", sim_id).execute()
+            st.success("Simulation mise à jour ✅")
+            st.experimental_rerun()
 
+        if st.button("Supprimer simulation", key=f"delete_{sim_id}"):
+            supabase.table("cinematique_brute").delete().eq("id", sim_id).execute()
+            st.success("Simulation supprimée ✅")
+            st.experimental_rerun()

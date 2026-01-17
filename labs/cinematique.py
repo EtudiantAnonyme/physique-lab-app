@@ -169,20 +169,21 @@ def run_cinematique_lab():
             t_solutions = t_solutions[np.isreal(t_solutions)].real
             st.write(f"Temps possibles : {t_solutions}")
 
-            # Affichage de la formule appliquée
-            st.markdown("**Formule appliquée :**")
+            st.markdown("**Formule quadratique appliquée :**")
 
-            # Construire la formule LaTeX correctement
-            # Gestion des signes et parenthèses pour une lecture claire
-            a_term = f"{a2:.3f} t^2"
-            b_term = f"+ {b2:.3f} t" if b2 >= 0 else f"- {abs(b2):.3f} t"
-            c_term = f"+ {c2:.3f}" if c2 >= 0 else f"- {abs(c2):.3f}"
-            x_term = f"- ({input_val:.3f})"
+            # Écriture explicite de la solution quadratique
+            # t = (-b ± sqrt(b^2 - 4 a (c - x))) / (2a)
+            a_str = f"{a2:.3f}"
+            b_str = f"{b2:.3f}"
+            c_minus_x_str = f"{c2 - input_val:.3f}"
 
-            latex_eq = a_term + " " + b_term + " " + c_term + " " + x_term + " = 0"
+            latex_eq = (
+                rf"t = \frac{{ -({b_str}) \pm \sqrt{{({b_str})^2 - 4 \cdot ({a_str}) \cdot ({c_minus_x_str})}} }}"
+                rf"{{2 \cdot ({a_str})}}"
+            )
 
-            # Affichage LaTeX
             st.latex(latex_eq)
+
 
         elif option == "Vitesse v(t)":
             # Résolution linéaire : 2 a t + b - v = 0

@@ -132,24 +132,19 @@ def run_cinematique_lab():
 
         st.markdown("Vous pouvez calculer x, v, a pour un temps donné, même en dehors des mesures expérimentales.")
         t_input = st.number_input("Entrer un temps t (s)", value=float(t_vals[-1]), step=0.1, key=f"t_calc_{sim_id}")
-
-        # Calculs
         x_calc = a2 * t_input**2 + b2 * t_input + c2
         v_calc = 2 * a2 * t_input + b2
         a_calc = 2 * a2
-
-        # Affichage résultats
         col1, col2, col3 = st.columns(3)
         col1.metric("Position x(t)", f"{x_calc:.3f} m")
         col2.metric("Vitesse v(t)", f"{v_calc:.3f} m/s")
         col3.metric("Accélération a(t)", f"{a_calc:.3f} m/s²")
 
-        # Affichage des formules LaTeX appliquées
-        st.markdown("**Formules appliquées pour ce temps :**")
-        st.latex(rf"x({t_input}) = {a2:.3f} \cdot ({t_input})^2 + {b2:.3f} \cdot ({t_input}) + {c2:.3f} = {x_calc:.3f}")
-        st.latex(rf"v({t_input}) = 2 \cdot {a2:.3f} \cdot ({t_input}) + {b2:.3f} = {v_calc:.3f}")
-        st.latex(rf"a({t_input}) = 2 \cdot {a2:.3f} = {a_calc:.3f}")
-
+        st.markdown("**Explication des calculs :**")
+        st.latex(r"x(t) = a t^2 + b t + c")
+        st.latex(r"v(t) = dx/dt = 2 a t + b")
+        st.latex(r"a(t) = d^2x/dt^2 = 2 a")
+        
         # =======================
         # 6️⃣ Inverser : calculer t à partir de x ou v
         # =======================

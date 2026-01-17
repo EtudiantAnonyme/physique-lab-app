@@ -93,12 +93,28 @@ def run_cinematique_2D_lab():
     if not simulations:
         st.info("Aucune simulation enregistrée.")
         return
-
+    
     for sim in simulations:
-        sim_id = sim["id"]
-        st.markdown(f"## Simulation {sim_id} — {sim['created_at']}")
-        df = pd.DataFrame(sim["results"])
-        df = df.sort_values("t")
+        sim_id = sim.get("id", "N/A")
+        st.markdown(f"## Simulation {sim_id} — {sim.get('created_at', 'Inconnu')}")
+
+        # Vérifier que la clé 'results' existe et que ce n'est pas None
+        results = sim.get("results")
+        if results is None or not isinstance(results, dict):
+            st.warning(f"Simulation {sim_id} n'a pas de données valides.")
+            continue
+
+        # Créer DataFrame à partir des listes de résultats
+        try:
+            df = pd.DataFrame(results)
+        except Exception as e:
+            st.error(f"Impossible de créer le tableau pour la simulation {sim_id}: {e}")
+            continue
+
+        # Trier par temps si la colonne existe
+        if "t" in df.columns:
+            df = df.sort_values("t")
+
         t_vals = np.array(df["t"])
         x_vals = np.array(df["x"])
         y_vals = np.array(df["y"])

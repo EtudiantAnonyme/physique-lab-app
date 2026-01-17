@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from utils.supabase_client import supabase
 import io
 import json
@@ -17,8 +18,8 @@ def run_mouvement_circulaire_lab():
     st.markdown("""
     Cette application permet de :
     - Enregistrer et gérer des mesures expérimentales en rotation
-    - Calculer automatiquement ω, vitesse, accélération centripète
-    - Visualiser graphiquement la trajectoire circulaire
+    - Calculer automatiquement ω, vitesse tangente, accélération centripète
+    - Visualiser graphiquement la trajectoire circulaire en 3D (x, y, t)
     - Tester différentes valeurs pour comprendre la cinématique circulaire
     """)
     st.divider()
@@ -37,13 +38,7 @@ def run_mouvement_circulaire_lab():
     # 2️⃣ Ajouter des mesures expérimentales
     # =======================
     st.header("2️⃣ Ajouter des données expérimentales")
-    n = st.number_input(
-        "Nombre de mesures",
-        min_value=2,
-        max_value=100,
-        value=10,
-        step=1
-    )
+    n = st.number_input("Nombre de mesures", min_value=2, max_value=100, value=10, step=1)
 
     t_list, theta_list = [], []
     for i in range(n):
@@ -58,24 +53,17 @@ def run_mouvement_circulaire_lab():
     radius = st.number_input("Rayon de rotation r (m)", min_value=0.01, value=1.0, step=0.01)
 
     if st.button("📤 Enregistrer l’expérience"):
-        # Calcul automatique des paramètres
         t_arr = np.array(t_list)
         theta_rad = np.deg2rad(np.array(theta_list))
         dt = np.diff(t_arr)
         dtheta = np.diff(theta_rad)
 
-        # ω moyen (si dt non nul)
         omega = np.zeros(len(t_arr))
         omega[1:] = dtheta / dt
-        omega[0] = omega[1]  # valeur initiale
+        omega[0] = omega[1]  # initial
 
-        # Vitesse tangente
         v = omega * radius
-
-        # Accélération centripète
         a_c = v**2 / radius
-
-        # Coordonnées x, y
         x = radius * np.cos(theta_rad)
         y = radius * np.sin(theta_rad)
 
@@ -119,7 +107,7 @@ def run_mouvement_circulaire_lab():
             st.warning(f"Simulation {sim_id} n'a pas de données valides.")
             continue
 
-        # Création du DataFrame
+        # DataFrame
         df = pd.DataFrame({
             "t": results.get("t", []),
             "theta": results.get("theta", []),
@@ -137,46 +125,45 @@ def run_mouvement_circulaire_lab():
         st.subheader("📊 Tableau des mesures")
         st.dataframe(df)
 
-        # ---- Graphique de la trajectoire
-        fig, ax = plt.subplots(figsize=(6,6))
-        ax.plot(df["x"], df["y"], marker='o', linestyle='-', color='crimson')
-        ax.set_xlabel("x (m)")
-        ax.set_ylabel("y (m)")
-        ax.set_title("Trajectoire circulaire")
-        ax.set_aspect('equal', 'box')
-        ax.grid(True)
-        st.pyplot(fig)
+        # ---- Graphique 2D
+        fig2d, ax2d = plt.subplots(figsize=(6,6))
+        ax2d.plot(df["x"], df["y"], marker='o', linestyle='-', color='crimson')
+        ax2d.set_xlabel("x (m)")
+        ax2d.set_ylabel("y (m)")
+        ax2d.set_title("Trajectoire circulaire (2D)")
+        ax2d.set_aspect('equal', 'box')
+        ax2d.grid(True)
+        st.pyplot(fig2d)
 
-        # Téléchargement CSV/JSON
+        # ---- Graphique 3D (x, y, t)
+        fig3d = plt.figure(figsize=(8,6))
+        ax3d = fig3d.add_subplot(111, projection='3d')
+        ax3d.plot(df["x"], df["y"], df["t"], marker='o', linestyle='-', color='blue')
+        ax3d.set_xlabel("x (m)")
+        ax3d.set_ylabel("y (m)")
+        ax3d.set_zlabel("Temps (s)")
+        ax3d.set_title("Trajectoire circulaire 3D")
+        st.pyplot(fig3d)
+
+        # Téléchargement CSV/JSON et graphique
         buf_csv = io.StringIO()
         df.to_csv(buf_csv, index=False)
-        st.download_button(
-            "Télécharger données CSV",
-            data=buf_csv.getvalue(),
-            file_name=f"simulation_{sim_id}.csv",
-            mime="text/csv"
-        )
+        st.download_button(f"Télécharger CSV simulation {sim_id}", buf_csv.getvalue(), f"simulation_{sim_id}.csv", "text/csv")
 
         json_data = json.dumps(results, indent=4)
-        st.download_button(
-            "Télécharger données JSON",
-            data=json_data,
-            file_name=f"simulation_{sim_id}.json",
-            mime="application/json"
-        )
+        st.download_button(f"Télécharger JSON simulation {sim_id}", json_data, f"simulation_{sim_id}.json", "application/json")
 
-        # Téléchargement graphique
-        buf_img = io.BytesIO()
-        fig.savefig(buf_img, format='png')
-        buf_img.seek(0)
-        st.download_button(
-            "Télécharger graphique",
-            data=buf_img,
-            file_name=f"simulation_{sim_id}_trajectory.png",
-            mime="image/png"
-        )
+        buf_img2d = io.BytesIO()
+        fig2d.savefig(buf_img2d, format='png')
+        buf_img2d.seek(0)
+        st.download_button(f"Télécharger graphique 2D", buf_img2d, f"simulation_{sim_id}_2D.png", "image/png")
 
-        # ---- Calculatrice cinématique
+        buf_img3d = io.BytesIO()
+        fig3d.savefig(buf_img3d, format='png')
+        buf_img3d.seek(0)
+        st.download_button(f"Télécharger graphique 3D", buf_img3d, f"simulation_{sim_id}_3D.png", "image/png")
+
+        # ---- Calculatrice complète
         st.subheader("🧮 Calculatrice cinématique")
         calc_option = st.selectbox(f"Calcul pour simulation {sim_id}", [
             "Temps → Vitesse tangente",
@@ -187,7 +174,7 @@ def run_mouvement_circulaire_lab():
             "Angle → Vitesse"
         ], key=f"calc_{sim_id}")
 
-        pos_axis = "x"  # par défaut
+        pos_axis = "x"
         if calc_option.startswith("Position →"):
             pos_axis = st.radio("Position par rapport à :", ["x", "y"], key=f"pos_axis_{sim_id}")
 
@@ -205,27 +192,21 @@ def run_mouvement_circulaire_lab():
             if calc_option == "Temps → Vitesse tangente":
                 v_val = np.interp(input_val, t_arr, v_arr)
                 st.write(f"v ≈ {v_val:.3f} m/s")
-
             elif calc_option == "Vitesse → Temps":
                 idx = (np.abs(v_arr - input_val)).argmin()
                 st.write(f"t ≈ {t_arr[idx]:.3f} s")
-
             elif calc_option == "Temps → Position (x, y)":
                 x_val = np.interp(input_val, t_arr, x_arr)
                 y_val = np.interp(input_val, t_arr, y_arr)
                 st.write(f"x ≈ {x_val:.3f} m, y ≈ {y_val:.3f} m")
-
             elif calc_option == "Position → Temps":
-                # Trouver le temps correspondant à la position choisie
-                arr = x_arr if pos_axis == "x" else y_arr
+                arr = x_arr if pos_axis=="x" else y_arr
                 idx = (np.abs(arr - input_val)).argmin()
                 st.write(f"t ≈ {t_arr[idx]:.3f} s")
-
             elif calc_option == "Position → Vitesse tangente":
-                arr = x_arr if pos_axis == "x" else y_arr
+                arr = x_arr if pos_axis=="x" else y_arr
                 idx = (np.abs(arr - input_val)).argmin()
                 st.write(f"v ≈ {v_arr[idx]:.3f} m/s")
-
             elif calc_option == "Angle → Vitesse":
                 theta_deg = input_val
                 idx = (np.abs(np.array(results["theta"]) - theta_deg)).argmin()
@@ -234,7 +215,7 @@ def run_mouvement_circulaire_lab():
     st.divider()
 
     # =======================
-    # 4️⃣ Gestion des expériences enregistrées
+    # 4️⃣ Gestion des expériences
     # =======================
     st.header("4️⃣ Gestion des expériences")
     for sim in simulations:

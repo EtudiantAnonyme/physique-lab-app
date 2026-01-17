@@ -141,36 +141,41 @@ def run_mouvement_circulaire_lab():
         ax2d.grid(True)
         st.pyplot(fig2d)
 
-        # ---- Graphique 3D interactif
-        st.subheader("📈 Trajectoire 3D interactive (x, y, t)")
-        fig3d = go.Figure(
-            data=go.Scatter3d(
-                x=df["x"],
-                y=df["y"],
-                z=df["t"],
-                mode='lines+markers',
-                marker=dict(
-                    size=5,
-                    color=df["t"],
-                    colorscale='Viridis',
-                    colorbar=dict(title="t (s)")
-                ),
-                line=dict(color=df["t"], colorscale='Viridis', width=4)
-            )
-        )
-        fig3d.update_layout(
+        # ---- Graphique 3D interactif smooth
+        st.subheader("🌐 Trajectoire 3D interactive (x, y, t)")
+
+        # Interpolation pour une courbe lisse
+        t_smooth = np.linspace(df["t"].min(), df["t"].max(), 300)
+        theta_smooth = np.interp(t_smooth, df["t"], np.deg2rad(df["theta"]))
+        r_smooth = results.get("radius", 1.0)
+        x_smooth = r_smooth * np.cos(theta_smooth)
+        y_smooth = r_smooth * np.sin(theta_smooth)
+        z_smooth = t_smooth
+
+        # Gradient de couleur selon le temps
+        colors = z_smooth
+
+        # Plotly 3D
+        fig_3d = go.Figure(data=[go.Scatter3d(
+            x=x_smooth,
+            y=y_smooth,
+            z=z_smooth,
+            mode='lines+markers',
+            marker=dict(size=4, color=colors, colorscale='Viridis', colorbar=dict(title='Temps (s)')),
+            line=dict(color='blue', width=4)
+        )])
+        fig_3d.update_layout(
             scene=dict(
-                xaxis_title="x (m)",
-                yaxis_title="y (m)",
-                zaxis_title="Temps (s)",
+                xaxis_title='x (m)',
+                yaxis_title='y (m)',
+                zaxis_title='t (s)',
                 aspectmode='auto'
             ),
-            width=800,
-            height=600,
-            margin=dict(r=10, l=10, b=10, t=30),
-            title="Trajectoire circulaire 3D interactive"
+            title="Trajectoire circulaire 3D smooth",
+            width=700,
+            height=600
         )
-        st.plotly_chart(fig3d, use_container_width=True)
+        st.plotly_chart(fig_3d, use_container_width=True)
 
         # ---- Téléchargement CSV / JSON / graphiques
         buf_csv = io.StringIO()

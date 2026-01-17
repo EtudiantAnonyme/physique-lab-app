@@ -187,6 +187,10 @@ def run_mouvement_circulaire_lab():
             "Angle → Vitesse"
         ], key=f"calc_{sim_id}")
 
+        pos_axis = "x"  # par défaut
+        if calc_option.startswith("Position →"):
+            pos_axis = st.radio("Position par rapport à :", ["x", "y"], key=f"pos_axis_{sim_id}")
+
         input_val = st.number_input("Entrer la valeur", value=0.0, key=f"input_{sim_id}")
 
         if st.button(f"Calculer", key=f"calc_btn_{sim_id}"):
@@ -194,30 +198,32 @@ def run_mouvement_circulaire_lab():
             omega_arr = np.array(results["omega"])
             v_arr = np.array(results["v"])
             t_arr = np.array(results["t"])
+            x_arr = np.array(results["x"])
+            y_arr = np.array(results["y"])
             theta_arr = np.deg2rad(np.array(results["theta"]))
 
             if calc_option == "Temps → Vitesse tangente":
-                # Interpolation linéaire
                 v_val = np.interp(input_val, t_arr, v_arr)
-                st.write(f"v = {v_val:.3f} m/s")
+                st.write(f"v ≈ {v_val:.3f} m/s")
 
             elif calc_option == "Vitesse → Temps":
-                # Trouver le temps correspondant à v
                 idx = (np.abs(v_arr - input_val)).argmin()
                 st.write(f"t ≈ {t_arr[idx]:.3f} s")
 
             elif calc_option == "Temps → Position (x, y)":
-                x_val = np.interp(input_val, t_arr, df["x"])
-                y_val = np.interp(input_val, t_arr, df["y"])
+                x_val = np.interp(input_val, t_arr, x_arr)
+                y_val = np.interp(input_val, t_arr, y_arr)
                 st.write(f"x ≈ {x_val:.3f} m, y ≈ {y_val:.3f} m")
 
             elif calc_option == "Position → Temps":
-                # Approximation par x (pour trajectoire complète)
-                idx = (np.abs(df["x"] - input_val)).argmin()
-                st.write(f"t ≈ {df['t'].iloc[idx]:.3f} s")
+                # Trouver le temps correspondant à la position choisie
+                arr = x_arr if pos_axis == "x" else y_arr
+                idx = (np.abs(arr - input_val)).argmin()
+                st.write(f"t ≈ {t_arr[idx]:.3f} s")
 
             elif calc_option == "Position → Vitesse tangente":
-                idx = (np.abs(df["x"] - input_val)).argmin()
+                arr = x_arr if pos_axis == "x" else y_arr
+                idx = (np.abs(arr - input_val)).argmin()
                 st.write(f"v ≈ {v_arr[idx]:.3f} m/s")
 
             elif calc_option == "Angle → Vitesse":

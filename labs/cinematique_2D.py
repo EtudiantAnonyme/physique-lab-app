@@ -144,7 +144,7 @@ def run_cinematique_2D_lab():
         # ---- Graphique
         fig, ax_plot = plt.subplots(figsize=(6,4))
         ax_plot.scatter(x_vals, y_vals, color="#1f2937", s=20, label="Données expérimentales")
-        ax_plot.plot(x_smooth, y_smooth, color="green", linestyle="-", linewidth=1.5, label="Fit balistique")
+        ax_plot.plot(x_smooth, y_smooth, color="crimson", linestyle="-", linewidth=1.5, label="Fit balistique")
         ax_plot.set_xlabel("x (m)")
         ax_plot.set_ylabel("y (m)")
         ax_plot.set_title("Trajectoire du projectile")
@@ -202,7 +202,7 @@ def run_cinematique_2D_lab():
         st.latex(r"\frac{dx}{dt} = v_x \implies x(t) = v_{0x} t + x_0")
         st.latex(r"\frac{dy}{dt} = v_y = v_{0y} - g t \implies y(t) = v_{0y} t - \frac{1}{2} g t^2 + y_0")
 
-        # ---- Calculatrice interactive
+        # ---- Calculatrice interactive améliorée
         st.subheader("🧮 Calculatrice cinématique")
         calc_option = st.selectbox("Choisir le calcul", [
             "Temps → Vitesse",
@@ -211,48 +211,66 @@ def run_cinematique_2D_lab():
             "Position → Temps",
             "Position → Vitesse",
             "Vitesse → Position"
-        ])
-        input_val = st.number_input("Entrer la valeur", value=0.0)
+        ], key=f"calc_option_{sim_id}")
 
-        if st.button(f"Calculer pour simulation {sim_id}", key=f"calc_{sim_id}"):
+        # Si l'utilisateur choisit un calcul basé sur la position, il peut choisir x ou y
+        pos_axis = None
+        if "Position" in calc_option:
+            pos_axis = st.radio("Position par rapport à :", ["x", "y"], key=f"pos_axis_{sim_id}")
+
+        input_val = st.number_input("Entrer la valeur", value=0.0, key=f"input_val_{sim_id}")
+
+        if st.button(f"Calculer pour simulation {sim_id}", key=f"calc_btn_{sim_id}"):
 
             if calc_option == "Temps → Vitesse":
                 vx_calc = v0x
-                vy_calc = v0y - g_exp*input_val
+                vy_calc = v0y - g_exp * input_val
                 st.write(f"v_x = {vx_calc:.3f} m/s, v_y = {vy_calc:.3f} m/s")
 
             elif calc_option == "Vitesse → Temps":
                 if g_exp != 0:
-                    t_calc = (v0y - input_val)/g_exp
+                    t_calc = (v0y - input_val) / g_exp
                     st.write(f"t = {t_calc:.3f} s")
                 else:
                     st.warning("g = 0, impossible de calculer le temps")
 
             elif calc_option == "Temps → Position":
-                x_calc = v0x*input_val + bx
-                y_calc = -0.5*g_exp*input_val**2 + v0y*input_val + cy
+                x_calc = v0x * input_val + bx
+                y_calc = -0.5 * g_exp * input_val**2 + v0y * input_val + cy
                 st.write(f"x = {x_calc:.3f} m, y = {y_calc:.3f} m")
 
             elif calc_option == "Position → Temps":
-                coeffs = [-0.5*g_exp, v0y, cy - input_val]
-                t_sols = np.roots(coeffs)
-                t_sols = t_sols[np.isreal(t_sols)].real
-                st.write(f"Temps possibles: {t_sols}")
+                if pos_axis == "x":
+                    if v0x != 0:
+                        t_calc = (input_val - bx) / v0x
+                        st.write(f"Temps correspondant: t = {t_calc:.3f} s")
+                    else:
+                        st.warning("v0x = 0, impossible de calculer le temps à partir de x")
+                else:  # y
+                    coeffs = [-0.5 * g_exp, v0y, cy - input_val]
+                    t_sols = np.roots(coeffs)
+                    t_sols = t_sols[np.isreal(t_sols)].real
+                    st.write(f"Temps possibles: {t_sols}")
 
             elif calc_option == "Position → Vitesse":
-                coeffs = [-0.5*g_exp, v0y, cy - input_val]
-                t_sols = np.roots(coeffs)
-                t_sols = t_sols[np.isreal(t_sols)].real
-                vy_sols = v0y - g_exp*t_sols
-                vx_calc = v0x
-                st.write(f"Temps possibles: {t_sols}")
-                st.write(f"v_x = {vx_calc:.3f} m/s, v_y correspondantes = {vy_sols}")
+                if pos_axis == "x":
+                    vx_calc = v0x
+                    st.write(f"v_x = {vx_calc:.3f} m/s (v_y dépend du temps)")
+                else:  # y
+                    coeffs = [-0.5 * g_exp, v0y, cy - input_val]
+                    t_sols = np.roots(coeffs)
+                    t_sols = t_sols[np.isreal(t_sols)].real
+                    vy_sols = v0y - g_exp * t_sols
+                    vx_calc = v0x
+                    st.write(f"Temps possibles: {t_sols}")
+                    st.write(f"v_x = {vx_calc:.3f} m/s, v_y correspondantes = {vy_sols}")
 
             elif calc_option == "Vitesse → Position":
-                t_calc = (v0y - input_val)/g_exp if g_exp != 0 else 0
-                y_calc = -0.5*g_exp*t_calc**2 + v0y*t_calc + cy
+                t_calc = (v0y - input_val) / g_exp if g_exp != 0 else 0
+                y_calc = -0.5 * g_exp * t_calc**2 + v0y * t_calc + cy
                 x_calc = v0x * t_calc + bx
                 st.write(f"x = {x_calc:.3f} m, y = {y_calc:.3f} m, t = {t_calc:.3f} s")
+
 
     st.divider()
 

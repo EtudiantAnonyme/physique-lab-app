@@ -132,18 +132,23 @@ def run_cinematique_lab():
 
         st.markdown("Vous pouvez calculer x, v, a pour un temps donné, même en dehors des mesures expérimentales.")
         t_input = st.number_input("Entrer un temps t (s)", value=float(t_vals[-1]), step=0.1, key=f"t_calc_{sim_id}")
+
+        # Calculs
         x_calc = a2 * t_input**2 + b2 * t_input + c2
         v_calc = 2 * a2 * t_input + b2
         a_calc = 2 * a2
+
+        # Affichage résultats
         col1, col2, col3 = st.columns(3)
         col1.metric("Position x(t)", f"{x_calc:.3f} m")
         col2.metric("Vitesse v(t)", f"{v_calc:.3f} m/s")
         col3.metric("Accélération a(t)", f"{a_calc:.3f} m/s²")
 
-        st.markdown("**Explication des calculs :**")
-        st.latex(r"x(t) = a t^2 + b t + c")
-        st.latex(r"v(t) = dx/dt = 2 a t + b")
-        st.latex(r"a(t) = d^2x/dt^2 = 2 a")
+        # Affichage des formules LaTeX appliquées
+        st.markdown("**Formules appliquées pour ce temps :**")
+        st.latex(rf"x({t_input}) = {a2:.3f} \cdot ({t_input})^2 + {b2:.3f} \cdot ({t_input}) + {c2:.3f} = {x_calc:.3f}")
+        st.latex(rf"v({t_input}) = 2 \cdot {a2:.3f} \cdot ({t_input}) + {b2:.3f} = {v_calc:.3f}")
+        st.latex(rf"a({t_input}) = 2 \cdot {a2:.3f} = {a_calc:.3f}")
 
         # =======================
         # 6️⃣ Inverser : calculer t à partir de x ou v
@@ -154,20 +159,21 @@ def run_cinematique_lab():
         input_val = st.number_input("Entrer la valeur", value=0.0, step=0.1, key=f"inverse_{sim_id}")
 
         if option == "Position x(t)":
-            # Quadratique : solve a t^2 + b t + c - x = 0
+            # Résolution quadratique : a t^2 + b t + c - x = 0
             coeffs = [a2, b2, c2 - input_val]
             t_solutions = np.roots(coeffs)
             t_solutions = t_solutions[np.isreal(t_solutions)].real
             st.write(f"Temps possibles : {t_solutions}")
-            st.markdown("**Calcul effectué :** résolution de a t² + b t + c = x")
+            st.markdown("**Formule appliquée :**")
+            st.latex(rf"{a2:.3f} t^2 + {b2:.3f} t + {c2:.3f} = {input_val}")
 
         elif option == "Vitesse v(t)":
-            # Linéaire : solve 2 a t + b - v = 0
+            # Résolution linéaire : 2 a t + b - v = 0
             t_sol = (input_val - b2) / (2 * a2)
             st.write(f"Temps : {t_sol:.3f} s")
-            st.markdown("**Calcul effectué :** résolution de v = 2 a t + b")
+            st.markdown("**Formule appliquée :**")
+            st.latex(rf"v(t) = 2 \cdot {a2:.3f} \cdot t + {b2:.3f} = {input_val}")
 
-        st.divider()
 
         # =======================
         # 7️⃣ Modifier / Supprimer

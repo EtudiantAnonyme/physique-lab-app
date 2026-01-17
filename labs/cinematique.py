@@ -12,7 +12,7 @@ def run_cinematique_lab():
         layout="wide"
     )
 
-    st.title("🧪 Laboratoire Cinématique 1D — Cégep Montmorency")
+    st.subheader("🏃 Laboratoire Cinématique 1D — Cégep Montmorency")
     st.markdown("""
     Cette application permet de :
     - Enregistrer et gérer des mesures expérimentales

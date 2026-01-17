@@ -135,11 +135,11 @@ def run_cinematique_lab():
         })
         st.dataframe(df_phys, use_container_width=True)
 
-# Ajouter des zones copiables pour chaque colonne
-st.markdown("**📋 Copier les données d'une colonne :**")
-for col in df_phys.columns:
-    col_data = ", ".join(df_phys[col].astype(str))
-    st.text_area(f"Copier la colonne '{col}'", value=col_data, height=80)
+        # Ajouter des zones copiables pour chaque colonne
+        st.markdown("**📋 Copier les données d'une colonne :**")
+        for col in df_phys.columns:
+            col_data = ", ".join(df_phys[col].astype(str))
+            st.text_area(f"Copier la colonne '{col}'", value=col_data, height=80)
         # =======================
         # 5️⃣ Calculatrice cinématique
         # =======================

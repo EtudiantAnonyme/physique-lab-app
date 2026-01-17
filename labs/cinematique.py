@@ -190,7 +190,14 @@ def run_cinematique_lab():
             t_sol = (input_val - b2) / (2 * a2)
             st.write(f"Temps : {t_sol:.3f} s")
             st.markdown("**Formule appliquée :**")
-            st.latex(rf"v(t) = 2 \cdot {a2:.3f} \cdot t + {b2:.3f} = {input_val}")
+            a_str = f"{a2:.3f}"
+            b_str = f"{b2:.3f}"
+            v_val_str = f"{input_val:.3f}"
+
+            # Formule explicite résolue pour t : t = (v - b) / (2 a)
+            latex_t = rf"t = \frac{{ {v_val_str} - ({b_str}) }}{{ 2 \cdot ({a_str}) }}"
+
+            st.latex(latex_t)
 
 
         # =======================

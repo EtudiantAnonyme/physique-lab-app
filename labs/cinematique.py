@@ -141,10 +141,19 @@ def run_cinematique_lab():
         col3.metric("Accélération a(t)", f"{a_calc:.3f} m/s²")
 
         st.markdown("**Explication des calculs :**")
-        st.latex(r"x(t) = a t^2 + b t + c")
-        st.latex(r"v(t) = dx/dt = 2 a t + b")
-        st.latex(r"a(t) = d^2x/dt^2 = 2 a")
-        
+        # Formule générale avec coefficients numériques
+        st.markdown("**Formules appliquées avec les coefficients du modèle quadratique :**")
+        st.latex(rf"x(t) = {a2:.3f} t^2 + {b2:.3f} t + {c2:.3f}")
+        st.latex(rf"v(t) = dx/dt = 2 \cdot {a2:.3f} t + {b2:.3f}")
+        st.latex(rf"a(t) = d^2x/dt^2 = 2 \cdot {a2:.3f}")
+
+        # Formule appliquée à un temps spécifique
+        st.markdown(f"**Substitution pour t = {t_input} s :**")
+        st.latex(rf"x({t_input}) = {a2:.3f} \cdot ({t_input})^2 + {b2:.3f} \cdot ({t_input}) + {c2:.3f} = {x_calc:.3f}")
+        st.latex(rf"v({t_input}) = 2 \cdot {a2:.3f} \cdot ({t_input}) + {b2:.3f} = {v_calc:.3f}")
+        st.latex(rf"a({t_input}) = 2 \cdot {a2:.3f} = {a_calc:.3f}")
+
+
         # =======================
         # 6️⃣ Inverser : calculer t à partir de x ou v
         # =======================
@@ -160,7 +169,13 @@ def run_cinematique_lab():
             t_solutions = t_solutions[np.isreal(t_solutions)].real
             st.write(f"Temps possibles : {t_solutions}")
             st.markdown("**Formule appliquée :**")
-            st.latex(rf"{a2:.3f} t^2 + {b2:.3f} t + {c2:.3f} = {input_val}")
+            # Préparer la formule lisible
+            a_term = f"{a2:.3f} t²" if a2 >= 0 else f"- {abs(a2):.3f} t²"
+            b_term = f"+ {b2:.3f} t" if b2 >= 0 else f"- {abs(b2):.3f} t"
+            c_term = f"+ {c2:.3f}" if c2 >= 0 else f"- {abs(c2):.3f}"
+
+            # Affichage LaTeX
+            st.latex(rf"{a_term} {b_term} {c_term} = {input_val:.3f}")
 
         elif option == "Vitesse v(t)":
             # Résolution linéaire : 2 a t + b - v = 0

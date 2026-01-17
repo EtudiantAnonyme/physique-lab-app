@@ -237,3 +237,57 @@ def run_cinematique_2D_lab():
                 y_calc = -0.5*g_exp*t_calc**2 + v0y*t_calc + cy
                 x_calc = v0x * t_calc + bx
                 st.write(f"x = {x_calc:.3f} m, y = {y_calc:.3f} m, t = {t_calc:.3f} s")
+    # =======================
+    # 4️⃣ Gestion des données expérimentales
+    # =======================
+    st.header("4️⃣ Gestion des expériences enregistrées")
+
+    # Afficher toutes les simulations avec leurs ID et type
+    if simulations:
+        for sim in simulations:
+            sim_id = sim.get("id", "N/A")
+            sim_type = sim.get("type", "inconnu")
+            st.markdown(f"**Simulation {sim_id} — Type : {sim_type}**")
+
+            # Bouton pour supprimer la simulation
+            if st.button(f"Supprimer simulation {sim_id}", key=f"del_{sim_id}"):
+                supabase.table("cinematique_2d").delete().eq("id", sim_id).execute()
+                st.success(f"✅ Simulation {sim_id} supprimée.")
+                st.experimental_rerun()  # recharge l'app pour mettre à jour la liste
+
+            # Bouton pour modifier les données
+            if st.button(f"Modifier simulation {sim_id}", key=f"edit_{sim_id}"):
+                results = sim.get("results", {})
+                t_vals = results.get("t", [])
+                x_vals = results.get("x", [])
+                y_vals = results.get("y", [])
+                theta = results.get("theta", None)
+
+                st.markdown(f"### Modifier simulation {sim_id}")
+                n_modify = st.number_input("Nombre de mesures", min_value=1, max_value=100, value=len(t_vals), key=f"n_mod_{sim_id}")
+
+                t_new, x_new, y_new = [], [], []
+                for i in range(n_modify):
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        t_i = st.number_input(f"t[{i}]", value=t_vals[i] if i < len(t_vals) else 0.0, key=f"t_mod_{sim_id}_{i}")
+                    with c2:
+                        x_i = st.number_input(f"x[{i}]", value=x_vals[i] if i < len(x_vals) else 0.0, key=f"x_mod_{sim_id}_{i}")
+                    with c3:
+                        y_i = st.number_input(f"y[{i}]", value=y_vals[i] if i < len(y_vals) else 0.0, key=f"y_mod_{sim_id}_{i}")
+                    t_new.append(t_i)
+                    x_new.append(x_i)
+                    y_new.append(y_i)
+
+                theta_new = theta
+                if sim_type == "projectile/_catapulte":
+                    angle_known = st.checkbox("Angle de lancement connu ?", value=(theta is not None), key=f"theta_mod_{sim_id}")
+                    if angle_known:
+                        theta_new = st.number_input("Angle θ (degrés)", value=theta if theta else 45.0, key=f"theta_val_{sim_id}")
+
+                if st.button(f"📤 Enregistrer modifications simulation {sim_id}", key=f"save_mod_{sim_id}"):
+                    supabase.table("cinematique_2d").update({
+                        "results": {"t": t_new, "x": x_new, "y": y_new, "theta": theta_new}
+                    }).eq("id", sim_id).execute()
+                    st.success(f"✅ Simulation {sim_id} mise à jour.")
+                    st.experimental_rerun()  # recharge l'app pour mettre à jour

@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from utils.supabase_client import supabase
-import io
+
 
 def run_cinematique_2D_lab():
     st.set_page_config(
@@ -11,18 +11,17 @@ def run_cinematique_2D_lab():
         page_icon="🧭",
         layout="wide"
     )
- 
+
     st.subheader("🧭 Laboratoire Cinématique 2D — Cégep Montmorency")
     st.markdown("""
     Cette application permet de :
     - Enregistrer et gérer des mesures expérimentales en 2D
-    - Ajuster des modèles linéaires et quadratiques en 2D
-    - Visualiser graphiquement les résultats en 2D
-    - Calculer vitesse et accélération en 2D
-    - Tester différents temps ou valeurs pour comprendre les phénomènes cinématiques en 2D
+    - Étudier les trajectoires de projectiles
+    - Préparer les bases pour la dynamique 2D
     """)
 
     st.divider()
+
     # =======================
     # 1️⃣ Type d’expérience
     # =======================
@@ -32,85 +31,63 @@ def run_cinematique_2D_lab():
         "Choisissez le type d’expérience",
         [
             "Projectile / Catapulte",
-            "Mouvement plan général",
-            "Mouvement circulaire (à venir)"
+            "Mouvement plan général"
         ]
     )
+
     st.divider()
+
     # =======================
-    # 2️⃣ Ajouter des mesures expérimentales
+    # 2️⃣ Données expérimentales
     # =======================
     st.header("2️⃣ Ajouter des données expérimentales")
 
     n = st.number_input(
-    "Nombre de mesures",
-    min_value=2,
-    max_value=100,
-    value=10,
-    step=1
-    )   
+        "Nombre de mesures",
+        min_value=2,
+        max_value=50,
+        value=10,
+        step=1
+    )
+
+    t_list, x_list, y_list = [], [], []
+
+    for i in range(n):
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            t = st.number_input(f"t[{i}] (s)", key=f"t_{i}")
+        with c2:
+            x = st.number_input(f"x[{i}] (m)", key=f"x_{i}")
+        with c3:
+            y = st.number_input(f"y[{i}] (m)", key=f"y_{i}")
+
+        t_list.append(t)
+        x_list.append(x)
+        y_list.append(y)
+
+    angle = None
     if exp_type == "Projectile / Catapulte":
-        st.markdown("### 🎯 Données — Mouvement balistique")
+        angle = st.number_input("Angle de lancement θ (degrés)", value=45.0)
 
-        t_list, x_list, y_list = [], [], []
+    # =======================
+    # 3️⃣ Enregistrement Supabase
+    # =======================
+    if st.button("📤 Enregistrer l’expérience"):
+        try:
+            rows = []
+            for t, x, y in zip(t_list, x_list, y_list):
+                rows.append({
+                    "experience_type": exp_type,
+                    "angle": angle,
+                    "temps": t,
+                    "distance_x": x,
+                    "distance_y": y
+                })
 
-        for i in range(n):
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                t = st.number_input(f"t[{i}] (s)", key=f"t_cat_{i}")
-            with c2:
-                x = st.number_input(f"x[{i}] (m)", key=f"x_cat_{i}")
-            with c3:
-                y = st.number_input(f"y[{i}] (m)", key=f"y_cat_{i}")
+            supabase.table("cinematique_2D").insert(rows).execute()
 
-            t_list.append(t)
-            x_list.append(x)
-            y_list.append(y)
+            st.success("✅ Données enregistrées dans Supabase")
 
-        angle_known = st.checkbox("Angle de lancement connu ?")
-
-        theta = None
-        if angle_known:
-            theta = st.number_input("Angle θ (degrés)", value=45.0)
-
-        if st.button("📤 Enregistrer l’expérience"):
-            supabase.table("cinematique_2D").insert({
-                "type": "catapulte",
-                "results": {
-                    "t": t_list,
-                    "x": x_list,
-                    "y": y_list,
-                    "theta": theta
-                }
-            }).execute()
-
-            st.success("✅ Données de catapulte enregistrées")
-    elif exp_type == "Mouvement plan général":
-        st.markdown("### 📐 Données — Mouvement plan")
-
-        t_list, x_list, y_list = [], [], []
-
-        for i in range(n):
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                t = st.number_input(f"t[{i}] (s)", key=f"t_plan_{i}")
-            with c2:
-                x = st.number_input(f"x[{i}] (m)", key=f"x_plan_{i}")
-            with c3:
-                y = st.number_input(f"y[{i}] (m)", key=f"y_plan_{i}")
-
-            t_list.append(t)
-            x_list.append(x)
-            y_list.append(y)
-
-        if st.button("📤 Enregistrer l’expérience"):
-            supabase.table("cinematique_2D").insert({
-                "type": "plan",
-                "results": {
-                    "t": t_list,
-                    "x": x_list,
-                    "y": y_list
-                }
-            }).execute()
-
-            st.success("✅ Données planaires enregistrées")
+        except Exception as e:
+            st.error("❌ Erreur lors de l'enregistrement")
+            st.exception(e)

@@ -84,7 +84,7 @@ def run_cinematique_2D_lab():
                     "distance_y": y
                 })
 
-            supabase.table("cinematique_2D").insert(rows).execute()
+            supabase.table("cinematique_2d").insert(rows).execute()
 
             st.success("✅ Données enregistrées dans Supabase")
 

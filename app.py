@@ -1,6 +1,7 @@
 import streamlit as st
 from labs.cinematique import run_cinematique_lab
 from labs.cinematique_2D import run_cinematique_2D_lab
+from labs.mouvement_circulaire import run_mouvement_circulaire_lab
 
 st.set_page_config(
     page_title="Application laboratoire en physique",
@@ -15,7 +16,7 @@ Ce site vise à fournir des ressources et des applications interactives pour fac
 """)
 
 st.sidebar.header("Navigation")
-pages = ["Accueil", "Cinématique 1D", "Cinématique 2D"]
+pages = ["Accueil", "Cinématique 1D", "Cinématique 2D","Mouvement circulaire uniforme"]
 page_choice = st.sidebar.selectbox("Choisissez une page", pages)
 
 if page_choice == "Accueil":
@@ -32,3 +33,5 @@ elif page_choice == "Cinématique 1D":
     run_cinematique_lab()
 elif page_choice == "Cinématique 2D":
     run_cinematique_2D_lab()  
+elif page_choice == "Mouvement circulaire uniforme":
+    run_mouvement_circulaire_lab()

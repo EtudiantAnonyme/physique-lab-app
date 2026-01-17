@@ -115,15 +115,13 @@ def run_cinematique_lab():
             t, x,
             s=25,
             color="#1f2937",   # gris foncé moderne
-            alpha=0.8,
-            label="Données expérimentales",
             zorder=3
         )
 
         # Approximation linéaire (fine)
         ax.plot(
             t_smooth, x_lin_smooth,
-            linewidth=2,
+            linewidth=1.5,
             color="#2563eb",
             label="Approximation linéaire"
         )
@@ -131,7 +129,7 @@ def run_cinematique_lab():
         # Approximation quadratique (smooth + élégante)
         ax.plot(
             t_smooth, x_quad_smooth,
-            linewidth=2.5,
+            linewidth=1.5,
             color="#dc2626",
             linestyle="-",
             label="Approximation quadratique"

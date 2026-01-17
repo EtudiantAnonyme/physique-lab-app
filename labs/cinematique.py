@@ -170,12 +170,15 @@ def run_cinematique_lab():
             st.write(f"Temps possibles : {t_solutions}")
             st.markdown("**Formule appliquée :**")
             # Préparer la formule lisible
-            a_term = f"{a2:.3f} t²" if a2 >= 0 else f"- {abs(a2):.3f} t²"
-            b_term = f"+ {b2:.3f} t" if b2 >= 0 else f"- {abs(b2):.3f} t"
-            c_term = f"+ {c2:.3f}" if c2 >= 0 else f"- {abs(c2):.3f}"
+           # Préparer les termes avec parenthèses et signes
+            a_term = f"({a2:.3f}) t^2" if a2 >= 0 else f"(-{abs(a2):.3f}) t^2"
+            b_term = f"+ ({b2:.3f}) t" if b2 >= 0 else f"- ({abs(b2):.3f}) t"
+            c_term = f"+ ({c2:.3f})" if c2 >= 0 else f"- ({abs(c2):.3f})"
 
-            # Affichage LaTeX
-            st.latex(rf"{a_term} {b_term} {c_term} = {input_val:.3f}")
+            # Affichage LaTeX avec la valeur de x appliquée
+            st.markdown("**Équation quadratique utilisée pour trouver t :**")
+            st.latex(rf"{a_term} {b_term} {c_term} - ({input_val:.3f}) = 0")
+
 
         elif option == "Vitesse v(t)":
             # Résolution linéaire : 2 a t + b - v = 0

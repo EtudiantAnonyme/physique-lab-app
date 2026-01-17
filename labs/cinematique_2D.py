@@ -237,6 +237,7 @@ def run_cinematique_2D_lab():
                 y_calc = -0.5*g_exp*t_calc**2 + v0y*t_calc + cy
                 x_calc = v0x * t_calc + bx
                 st.write(f"x = {x_calc:.3f} m, y = {y_calc:.3f} m, t = {t_calc:.3f} s")
+    st.divider()
     # =======================
     # 4️⃣ Gestion des données expérimentales
     # =======================

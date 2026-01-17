@@ -143,8 +143,8 @@ def run_cinematique_2D_lab():
 
         # ---- Graphique
         fig, ax_plot = plt.subplots(figsize=(6,4))
-        ax_plot.scatter(x_vals, y_vals, color="#1f2937", s=25, label="Données expérimentales")
-        ax_plot.plot(x_smooth, y_smooth, color="crimson", linestyle="--", linewidth=2, label="Fit balistique")
+        ax_plot.scatter(x_vals, y_vals, color="#1f2937", s=20, label="Données expérimentales")
+        ax_plot.plot(x_smooth, y_smooth, color="green", linestyle="-", linewidth=1.5, label="Fit balistique")
         ax_plot.set_xlabel("x (m)")
         ax_plot.set_ylabel("y (m)")
         ax_plot.set_title("Trajectoire du projectile")

@@ -71,39 +71,59 @@ def run_cinematique_lab():
         st.session_state['rerun'] = False
         st.experimental_rerun()
 
-    # =======================
-    # Graphiques et approximations
-    # =======================
-    st.subheader("Graphiques et approximations pour chaque simulation")
+   # =======================
+# Graphiques et approximations (version améliorée)
+# =======================
+st.subheader("Graphiques et approximations (moindres carrés)")
 
-    for sim in simulations:
-        st.markdown(f"### Simulation {sim['id']} - {sim['created_at']}")
-        df_sim = pd.DataFrame(sim["results"])
-        t_values = df_sim["t"].values
-        x_values = df_sim["x"].values
+for sim in simulations:
+    st.markdown(f"### Simulation {sim['id']}")
 
-        # Régression linéaire (degré 1)
-        coeffs_lin = np.polyfit(t_values, x_values, 1)  # [a, b]
-        x_lin = np.polyval(coeffs_lin, t_values)
-        eq_lin = f"x(t) ≈ {coeffs_lin[0]:.3f}·t + {coeffs_lin[1]:.3f}"
+    df_sim = pd.DataFrame(sim["results"])
+    df_sim = df_sim.sort_values("t")  # IMPORTANT en physique
 
-        # Régression quadratique (degré 2)
-        coeffs_quad = np.polyfit(t_values, x_values, 2)  # [a, b, c]
-        x_quad = np.polyval(coeffs_quad, t_values)
-        eq_quad = f"x(t) ≈ {coeffs_quad[0]:.3f}·t² + {coeffs_quad[1]:.3f}·t + {coeffs_quad[2]:.3f}"
+    t = df_sim["t"].values
+    x = df_sim["x"].values
 
-        # Afficher les équations algébriques
-        st.markdown(f"**Approximation linéaire :** {eq_lin}")
-        st.markdown(f"**Approximation quadratique :** {eq_quad}")
+    # Régression linéaire
+    a1, b1 = np.polyfit(t, x, 1)
+    x_lin = a1 * t + b1
 
-        # Graphique matplotlib
-        fig, ax = plt.subplots()
-        ax.plot(t_values, x_values, "o", label="Données brutes")
-        ax.plot(t_values, x_lin, "-", label="Approx. linéaire")
-        ax.plot(t_values, x_quad, "--", label="Approx. quadratique")
-        ax.set_xlabel("Temps (s)")
-        ax.set_ylabel("Position (m)")
-        ax.set_title("Position en fonction du temps")
-        ax.grid(True)
-        ax.legend()
-        st.pyplot(fig)
+    # Régression quadratique
+    a2, b2, c2 = np.polyfit(t, x, 2)
+    x_quad = a2 * t**2 + b2 * t + c2
+
+    # Création du graphique
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+
+    # Données expérimentales
+    ax.scatter(t, x, color="black", s=60, label="Données expérimentales", zorder=3)
+
+    # Approximations
+    ax.plot(t, x_lin, color="royalblue", linewidth=2,
+            label="Approximation linéaire")
+    ax.plot(t, x_quad, color="crimson", linestyle="--", linewidth=2,
+            label="Approximation quadratique")
+
+    # Axes et style
+    ax.set_xlabel("Temps (s)")
+    ax.set_ylabel("Position (m)")
+    ax.set_title("Cinématique 1D : position en fonction du temps")
+    ax.grid(True, linestyle=":", alpha=0.6)
+    ax.legend()
+
+    # Équations algébriques (dans une boîte)
+    eq_text = (
+        f"Linéaire : x(t) ≈ {a1:.3f} t + {b1:.3f}\n"
+        f"Quadratique : x(t) ≈ {a2:.3f} t² + {b2:.3f} t + {c2:.3f}"
+    )
+
+    ax.text(
+        0.02, 0.95, eq_text,
+        transform=ax.transAxes,
+        fontsize=10,
+        verticalalignment="top",
+        bbox=dict(boxstyle="round", facecolor="white", alpha=0.85)
+    )
+
+    st.pyplot(fig)

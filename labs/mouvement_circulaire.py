@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import plotly.graph_objects as go
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from utils.supabase_client import supabase
 import io
 import json
@@ -18,9 +18,10 @@ def run_mouvement_circulaire_lab():
     st.markdown("""
     Cette application permet de :
     - Enregistrer et gérer des mesures expérimentales en rotation
-    - Calculer automatiquement ω, vitesse tangente, accélération centripète
-    - Visualiser graphiquement la trajectoire circulaire en 3D (x, y, t)
+    - Calculer automatiquement ω, vitesse, accélération centripète
+    - Visualiser graphiquement la trajectoire circulaire (2D et 3D)
     - Tester différentes valeurs pour comprendre la cinématique circulaire
+    - Bonus : animation de la particule en rotation
     """)
     st.divider()
 
@@ -38,7 +39,13 @@ def run_mouvement_circulaire_lab():
     # 2️⃣ Ajouter des mesures expérimentales
     # =======================
     st.header("2️⃣ Ajouter des données expérimentales")
-    n = st.number_input("Nombre de mesures", min_value=2, max_value=100, value=10, step=1)
+    n = st.number_input(
+        "Nombre de mesures",
+        min_value=2,
+        max_value=100,
+        value=10,
+        step=1
+    )
 
     t_list, theta_list = [], []
     for i in range(n):
@@ -53,15 +60,14 @@ def run_mouvement_circulaire_lab():
     radius = st.number_input("Rayon de rotation r (m)", min_value=0.01, value=1.0, step=0.01)
 
     if st.button("📤 Enregistrer l’expérience"):
+        # Calcul automatique
         t_arr = np.array(t_list)
         theta_rad = np.deg2rad(np.array(theta_list))
         dt = np.diff(t_arr)
         dtheta = np.diff(theta_rad)
-
         omega = np.zeros(len(t_arr))
         omega[1:] = dtheta / dt
         omega[0] = omega[1]  # initial
-
         v = omega * radius
         a_c = v**2 / radius
         x = radius * np.cos(theta_rad)
@@ -107,7 +113,6 @@ def run_mouvement_circulaire_lab():
             st.warning(f"Simulation {sim_id} n'a pas de données valides.")
             continue
 
-        # DataFrame
         df = pd.DataFrame({
             "t": results.get("t", []),
             "theta": results.get("theta", []),
@@ -122,6 +127,7 @@ def run_mouvement_circulaire_lab():
             st.warning(f"Simulation {sim_id} n'a pas de mesures.")
             continue
 
+        # ---- Tableau
         st.subheader("📊 Tableau des mesures")
         st.dataframe(df)
 
@@ -130,40 +136,71 @@ def run_mouvement_circulaire_lab():
         ax2d.plot(df["x"], df["y"], marker='o', linestyle='-', color='crimson')
         ax2d.set_xlabel("x (m)")
         ax2d.set_ylabel("y (m)")
-        ax2d.set_title("Trajectoire circulaire (2D)")
+        ax2d.set_title("Trajectoire circulaire 2D")
         ax2d.set_aspect('equal', 'box')
         ax2d.grid(True)
         st.pyplot(fig2d)
 
-        # ---- Graphique 3D (x, y, t)
-        fig3d = plt.figure(figsize=(8,6))
-        ax3d = fig3d.add_subplot(111, projection='3d')
-        ax3d.plot(df["x"], df["y"], df["t"], marker='o', linestyle='-', color='blue')
-        ax3d.set_xlabel("x (m)")
-        ax3d.set_ylabel("y (m)")
-        ax3d.set_zlabel("Temps (s)")
-        ax3d.set_title("Trajectoire circulaire 3D")
-        st.pyplot(fig3d)
+        # ---- Graphique 3D interactif
+        st.subheader("📈 Trajectoire 3D interactive (x, y, t)")
+        fig3d = go.Figure(
+            data=go.Scatter3d(
+                x=df["x"],
+                y=df["y"],
+                z=df["t"],
+                mode='lines+markers',
+                marker=dict(
+                    size=5,
+                    color=df["t"],
+                    colorscale='Viridis',
+                    colorbar=dict(title="t (s)")
+                ),
+                line=dict(color=df["t"], colorscale='Viridis', width=4)
+            )
+        )
+        fig3d.update_layout(
+            scene=dict(
+                xaxis_title="x (m)",
+                yaxis_title="y (m)",
+                zaxis_title="Temps (s)",
+                aspectmode='auto'
+            ),
+            width=800,
+            height=600,
+            margin=dict(r=10, l=10, b=10, t=30),
+            title="Trajectoire circulaire 3D interactive"
+        )
+        st.plotly_chart(fig3d, use_container_width=True)
 
-        # Téléchargement CSV/JSON et graphique
+        # ---- Téléchargement CSV / JSON / graphiques
         buf_csv = io.StringIO()
         df.to_csv(buf_csv, index=False)
-        st.download_button(f"Télécharger CSV simulation {sim_id}", buf_csv.getvalue(), f"simulation_{sim_id}.csv", "text/csv")
+        st.download_button(
+            "Télécharger données CSV",
+            data=buf_csv.getvalue(),
+            file_name=f"simulation_{sim_id}.csv",
+            mime="text/csv"
+        )
 
         json_data = json.dumps(results, indent=4)
-        st.download_button(f"Télécharger JSON simulation {sim_id}", json_data, f"simulation_{sim_id}.json", "application/json")
+        st.download_button(
+            "Télécharger données JSON",
+            data=json_data,
+            file_name=f"simulation_{sim_id}.json",
+            mime="application/json"
+        )
 
-        buf_img2d = io.BytesIO()
-        fig2d.savefig(buf_img2d, format='png')
-        buf_img2d.seek(0)
-        st.download_button(f"Télécharger graphique 2D", buf_img2d, f"simulation_{sim_id}_2D.png", "image/png")
+        buf_img = io.BytesIO()
+        fig2d.savefig(buf_img, format='png')
+        buf_img.seek(0)
+        st.download_button(
+            "Télécharger graphique 2D",
+            data=buf_img,
+            file_name=f"simulation_{sim_id}_trajectory.png",
+            mime="image/png"
+        )
 
-        buf_img3d = io.BytesIO()
-        fig3d.savefig(buf_img3d, format='png')
-        buf_img3d.seek(0)
-        st.download_button(f"Télécharger graphique 3D", buf_img3d, f"simulation_{sim_id}_3D.png", "image/png")
-
-        # ---- Calculatrice complète
+        # ---- Calculatrice cinématique avancée
         st.subheader("🧮 Calculatrice cinématique")
         calc_option = st.selectbox(f"Calcul pour simulation {sim_id}", [
             "Temps → Vitesse tangente",
@@ -192,30 +229,51 @@ def run_mouvement_circulaire_lab():
             if calc_option == "Temps → Vitesse tangente":
                 v_val = np.interp(input_val, t_arr, v_arr)
                 st.write(f"v ≈ {v_val:.3f} m/s")
+
             elif calc_option == "Vitesse → Temps":
                 idx = (np.abs(v_arr - input_val)).argmin()
                 st.write(f"t ≈ {t_arr[idx]:.3f} s")
+
             elif calc_option == "Temps → Position (x, y)":
                 x_val = np.interp(input_val, t_arr, x_arr)
                 y_val = np.interp(input_val, t_arr, y_arr)
                 st.write(f"x ≈ {x_val:.3f} m, y ≈ {y_val:.3f} m")
+
             elif calc_option == "Position → Temps":
-                arr = x_arr if pos_axis=="x" else y_arr
+                arr = x_arr if pos_axis == "x" else y_arr
                 idx = (np.abs(arr - input_val)).argmin()
                 st.write(f"t ≈ {t_arr[idx]:.3f} s")
+
             elif calc_option == "Position → Vitesse tangente":
-                arr = x_arr if pos_axis=="x" else y_arr
+                arr = x_arr if pos_axis == "x" else y_arr
                 idx = (np.abs(arr - input_val)).argmin()
                 st.write(f"v ≈ {v_arr[idx]:.3f} m/s")
+
             elif calc_option == "Angle → Vitesse":
                 theta_deg = input_val
                 idx = (np.abs(np.array(results["theta"]) - theta_deg)).argmin()
                 st.write(f"v ≈ {v_arr[idx]:.3f} m/s, ω ≈ {omega_arr[idx]:.3f} rad/s")
 
+        # ---- Surprise 🎁 : Animation simple de la particule
+        st.subheader("🎬 Animation de la particule en rotation")
+        t_anim = np.linspace(0, df["t"].max(), 100)
+        x_anim = r * np.cos(2*np.pi*t_anim/df["t"].max())
+        y_anim = r * np.sin(2*np.pi*t_anim/df["t"].max())
+        fig_anim, ax_anim = plt.subplots(figsize=(5,5))
+        line, = ax_anim.plot([], [], 'o-', color='crimson', markersize=8)
+        ax_anim.set_xlim(-r*1.2, r*1.2)
+        ax_anim.set_ylim(-r*1.2, r*1.2)
+        ax_anim.set_aspect('equal')
+        ax_anim.grid(True)
+        for xi, yi in zip(x_anim, y_anim):
+            line.set_data(xi, yi)
+            plt.pause(0.01)
+        st.pyplot(fig_anim)
+
     st.divider()
 
     # =======================
-    # 4️⃣ Gestion des expériences
+    # 4️⃣ Gestion des expériences enregistrées
     # =======================
     st.header("4️⃣ Gestion des expériences")
     for sim in simulations:

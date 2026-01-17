@@ -134,13 +134,31 @@ def run_cinematique_2D_lab():
         fig, ax_plot = plt.subplots(figsize=(6, 4))
         ax_plot.scatter(x_vals, y_vals, color="#1f2937", s=25, label="Données expérimentales")
         ax_plot.plot(x_smooth, y_smooth, color="crimson", linestyle="--", linewidth=2, label="Fit quadratique")
+
+        # ---- Analyse théorique si angle connu ----
+        theta_deg = results.get("theta")
+        if sim_type == "projectile/_catapulte" and theta_deg is not None:
+            theta_rad = np.radians(theta_deg)
+            v0x = ax
+            v0y = v0x * np.tan(theta_rad)
+            y0 = cy
+            g_theo = -2 * ay
+
+            x_theo = v0x * t_smooth
+            y_theo = v0y * t_smooth - 0.5 * g_theo * t_smooth**2 + y0
+
+            ax_plot.plot(x_theo, y_theo, color="green", linestyle="-.", linewidth=2, label="Théorie angle")
+            st.markdown("### ⚡ Analyse théorique avec angle connu")
+            st.write(f"Angle θ = {theta_deg}°")
+            st.write(f"v0x théorique = {v0x:.3f} m/s, v0y théorique = {v0y:.3f} m/s, y0 = {y0:.3f} m, g = {g_theo:.3f} m/s²")
+
         ax_plot.set_xlabel("x (m)")
         ax_plot.set_ylabel("y (m)")
         ax_plot.set_title("Trajectoire du projectile")
         ax_plot.grid(True, linestyle="--", alpha=0.4)
         ax_plot.text(0.05, 0.05, f"R² x: {r2_x:.3f}\nR² y: {r2_y:.3f}",
-                     transform=ax_plot.transAxes, fontsize=10,
-                     bbox=dict(facecolor="white", alpha=0.5))
+                    transform=ax_plot.transAxes, fontsize=10,
+                    bbox=dict(facecolor="white", alpha=0.5))
         ax_plot.legend(frameon=False)
         st.pyplot(fig)
 

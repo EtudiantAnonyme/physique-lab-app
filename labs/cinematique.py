@@ -124,7 +124,22 @@ def run_cinematique_lab():
             "a(t) (m/s²)": a_model
         })
         st.dataframe(df_phys, use_container_width=True)
+        st.subheader("4️⃣ Tableau cinématique")
+        v_model = 2 * a2 * t_vals + b2
+        a_model = np.full_like(t_vals, 2 * a2)
+        df_phys = pd.DataFrame({
+            "t (s)": t_vals,
+            "x(t) (m)": x_vals,
+            "v(t) (m/s)": v_model,
+            "a(t) (m/s²)": a_model
+        })
+        st.dataframe(df_phys, use_container_width=True)
 
+# Ajouter des zones copiables pour chaque colonne
+st.markdown("**📋 Copier les données d'une colonne :**")
+for col in df_phys.columns:
+    col_data = ", ".join(df_phys[col].astype(str))
+    st.text_area(f"Copier la colonne '{col}'", value=col_data, height=80)
         # =======================
         # 5️⃣ Calculatrice cinématique
         # =======================

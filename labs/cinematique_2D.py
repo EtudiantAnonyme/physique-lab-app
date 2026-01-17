@@ -169,20 +169,44 @@ def run_cinematique_2D_lab():
         ax_plot.legend(frameon=False)
         st.pyplot(fig)
 
-        # ---- Extraction des paramètres physiques ----
-        st.markdown("### ⚡ Paramètres physiques expérimentaux")
-        st.write(f"v0x_exp = {ax:.3f} m/s, v0y_exp = {by:.3f} m/s, y0_exp = {cy:.3f} m, g_exp = {g_exp:.3f} m/s²")
+        # ---- Extraction des paramètres physiques expérimentaux ----
+        st.markdown("### ⚡ Paramètres physiques expérimentaux (LaTeX)")
+        # Paramètres physiques
+        st.latex(rf"v_{{0x}} = {ax:.3f}\ \mathrm{{m/s}},\quad "
+                rf"v_{{0y}} = {by:.3f}\ \mathrm{{m/s}},\quad "
+                rf"y_0 = {cy:.3f}\ \mathrm{{m}},\quad "
+                rf"g = {g_exp:.3f}\ \mathrm{{m/s^2}}")
 
-        # ---- Calculs différentielles ----
+        # ---- Calculs différentielles détaillés ----
         st.subheader("📐 Calculs différentielles détaillés")
-        st.markdown("**Position et vitesse théorique :**")
-        st.latex(r"\frac{dx}{dt} = v_x \implies x(t) = v_{0x} t + x_0")
-        st.latex(r"\frac{dy}{dt} = v_y = v_{0y} - g t \implies y(t) = v_{0y} t - \frac{1}{2} g t^2 + y_0")
 
-        st.markdown("**Fit expérimental :**")
-        st.latex(rf"x(t) = {ax:.3f} t + {bx:.3f}")
-        st.latex(rf"y(t) = {ay:.3f} t^2 + {by:.3f} t + {cy:.3f}")
-        st.latex(rf"a_y = 2 * {ay:.3f} = {g_exp:.3f} m/s²")
+        st.markdown("**1️⃣ Position et vitesse théorique (formules de base) :**")
+        st.latex(r"""
+        \frac{dx}{dt} = v_x \implies x(t) = v_{0x} t + x_0
+        """)
+        st.latex(r"""
+        \frac{dy}{dt} = v_y = v_{0y} - g t \implies y(t) = v_{0y} t - \frac{1}{2} g t^2 + y_0
+        """)
+
+        st.markdown("**2️⃣ Transformation des données expérimentales en courbe :**")
+        st.markdown("""
+        - On dispose d'une série de points expérimentaux (t_i, x_i, y_i).  
+        - Pour x(t), un **fit linéaire** est utilisé : on approxime la relation par \(x(t) \approx v_{0x} t + x_0\).  
+        - Pour y(t), un **fit quadratique** est utilisé : on approxime la relation par \(y(t) \approx a t^2 + b t + c\), où \(a = -\frac{g_\mathrm{exp}}{2}\), \(b \approx v_{0y}\) et \(c = y_0\).  
+        - Les coefficients sont déterminés par **régression polynomiale** sur les mesures expérimentales.
+        """)
+
+        st.markdown("**3️⃣ Fit expérimental (résultats numériques) :**")
+        st.latex(rf"x(t) = {ax:.3f}\ t + {bx:.3f}")
+        st.latex(rf"y(t) = {ay:.3f}\ t^2 + {by:.3f}\ t + {cy:.3f}")
+        st.latex(rf"a_y = 2 \cdot {ay:.3f} = {g_exp:.3f}\ \mathrm{{m/s^2}}")
+
+        st.markdown("**💡 Interprétation :**")
+        st.markdown("""
+        - La pente de x(t) nous donne la **vitesse horizontale** \(v_{0x}\).  
+        - La pente initiale et la concavité de y(t) nous donnent la **vitesse verticale initiale** \(v_{0y}\) et **l'accélération gravitationnelle** g.  
+        - Cette transformation permet de visualiser la trajectoire sous forme de **courbe continue**, à partir des points discrets mesurés.
+        """)
 
         # ---- Substitution pour un temps spécifique
         st.subheader("⏱ Calcul pour un temps spécifique")

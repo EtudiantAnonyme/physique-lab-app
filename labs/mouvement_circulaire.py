@@ -256,19 +256,30 @@ def run_mouvement_circulaire_lab():
 
         # ---- Surprise 🎁 : Animation simple de la particule
         st.subheader("🎬 Animation de la particule en rotation")
+        r_anim = results.get("radius", 1.0)  # s'assurer que le rayon existe
         t_anim = np.linspace(0, df["t"].max(), 100)
-        x_anim = r * np.cos(2*np.pi*t_anim/df["t"].max())
-        y_anim = r * np.sin(2*np.pi*t_anim/df["t"].max())
-        fig_anim, ax_anim = plt.subplots(figsize=(5,5))
-        line, = ax_anim.plot([], [], 'o-', color='crimson', markersize=8)
-        ax_anim.set_xlim(-r*1.2, r*1.2)
-        ax_anim.set_ylim(-r*1.2, r*1.2)
-        ax_anim.set_aspect('equal')
-        ax_anim.grid(True)
-        for xi, yi in zip(x_anim, y_anim):
-            line.set_data(xi, yi)
-            plt.pause(0.01)
-        st.pyplot(fig_anim)
+        x_anim = r_anim * np.cos(2*np.pi*t_anim/df["t"].max())
+        y_anim = r_anim * np.sin(2*np.pi*t_anim/df["t"].max())
+
+        # Plotly pour animation interactive simple
+        fig_anim = go.Figure(
+            data=[go.Scatter(x=[x_anim[0]], y=[y_anim[0]], mode='markers+lines')],
+            layout=go.Layout(
+                xaxis=dict(range=[-r_anim*1.2, r_anim*1.2]),
+                yaxis=dict(range=[-r_anim*1.2, r_anim*1.2]),
+                title="Animation de la particule",
+                height=500,
+                width=500
+            )
+        )
+        frames = [go.Frame(data=[go.Scatter(x=[x_anim[k]], y=[y_anim[k]], mode='markers+lines')]) for k in range(len(t_anim))]
+        fig_anim.frames = frames
+        fig_anim.update_layout(updatemenus=[dict(type="buttons",
+                                                buttons=[dict(label="Play",
+                                                            method="animate",
+                                                            args=[None, {"frame": {"duration": 50, "redraw": True},
+                                                                            "fromcurrent": True}])])])
+        st.plotly_chart(fig_anim, use_container_width=True)
 
     st.divider()
 

@@ -170,14 +170,22 @@ def run_cinematique_lab():
             st.write(f"Temps possibles : {t_solutions}")
             st.markdown("**Formule appliquée :**")
             # Préparer la formule lisible
-           # Préparer les termes avec parenthèses et signes
-            a_term = f"({a2:.3f}) t^2" if a2 >= 0 else f"(-{abs(a2):.3f}) t^2"
-            b_term = f"+ ({b2:.3f}) t" if b2 >= 0 else f"- ({abs(b2):.3f}) t"
-            c_term = f"+ ({c2:.3f})" if c2 >= 0 else f"- ({abs(c2):.3f})"
+            # Préparer les coefficients avec LaTeX
+            a_str = f"{a2:.3f}"
+            b_str = f"{b2:.3f}"
+            c_str = f"{c2:.3f}"
+            x_val_str = f"{input_val:.3f}"
 
-            # Affichage LaTeX avec la valeur de x appliquée
-            st.markdown("**Équation quadratique utilisée pour trouver t :**")
-            st.latex(rf"{a_term} {b_term} {c_term} - ({input_val:.3f}) = 0")
+            # Construire la formule LaTeX correctement
+            # On gère les signes directement dans la formule LaTeX
+            latex_eq = rf"{a_str} t^2"
+            latex_eq += rf" + {b_str} t" if b2 >= 0 else rf" - {abs(b2):.3f} t"
+            latex_eq += rf" + {c_str}" if c2 >= 0 else rf" - {abs(c2):.3f}"
+            latex_eq += rf" - ({x_val_str}) = 0"
+
+            st.markdown("**Équation quadratique appliquée pour trouver t :**")
+            st.latex(latex_eq)
+
 
 
         elif option == "Vitesse v(t)":

@@ -259,32 +259,79 @@ def run_mouvement_circulaire_lab():
                 idx = (np.abs(np.array(results["theta"]) - theta_deg)).argmin()
                 st.write(f"v ≈ {v_arr[idx]:.3f} m/s, ω ≈ {omega_arr[idx]:.3f} rad/s")
 
-        # ---- Surprise 🎁 : Animation simple de la particule
-        st.subheader("🎬 Animation de la particule en rotation")
-        r_anim = results.get("radius", 1.0)  # s'assurer que le rayon existe
-        t_anim = np.linspace(0, df["t"].max(), 100)
-        x_anim = r_anim * np.cos(2*np.pi*t_anim/df["t"].max())
-        y_anim = r_anim * np.sin(2*np.pi*t_anim/df["t"].max())
+        # ---- Surprise 🎁 : Animation de la particule suivant la trajectoire mesurée
+        st.subheader("🎬 Animation de la particule en rotation (3D temps)")
 
-        # Plotly pour animation interactive simple
-        fig_anim = go.Figure(
-            data=[go.Scatter(x=[x_anim[0]], y=[y_anim[0]], mode='markers+lines')],
-            layout=go.Layout(
-                xaxis=dict(range=[-r_anim*1.2, r_anim*1.2]),
-                yaxis=dict(range=[-r_anim*1.2, r_anim*1.2]),
-                title="Animation de la particule",
-                height=500,
-                width=500
-            )
-        )
-        frames = [go.Frame(data=[go.Scatter(x=[x_anim[k]], y=[y_anim[k]], mode='markers+lines')]) for k in range(len(t_anim))]
+        # Récupération des données de la trajectoire
+        t_arr = np.array(df["t"])
+        x_arr = np.array(df["x"])
+        y_arr = np.array(df["y"])
+
+        # Interpolation pour smooth animation
+        t_smooth = np.linspace(t_arr.min(), t_arr.max(), 500)
+        x_smooth = np.interp(t_smooth, t_arr, x_arr)
+        y_smooth = np.interp(t_smooth, t_arr, y_arr)
+
+        # Gradient de couleur basé sur le temps
+        colors = t_smooth / t_smooth.max()
+
+        # Création du graphique Plotly 2D avec animation
+
+        # Trace principale : trajectoire complète
+        fig_anim = go.Figure()
+
+        fig_anim.add_trace(go.Scatter(
+            x=x_smooth,
+            y=y_smooth,
+            mode='lines',
+            line=dict(color='lightgray', width=2),
+            name='Trajectoire complète'
+        ))
+
+        # Particule animée
+        fig_anim.add_trace(go.Scatter(
+            x=[x_smooth[0]],
+            y=[y_smooth[0]],
+            mode='markers',
+            marker=dict(size=10, color='red'),
+            name='Particule'
+        ))
+
+        # Création des frames pour l'animation
+        frames = [go.Frame(
+            data=[go.Scatter(x=[x_smooth[k]], y=[y_smooth[k]], mode='markers')],
+            name=str(k)
+        ) for k in range(len(t_smooth))]
+
         fig_anim.frames = frames
-        fig_anim.update_layout(updatemenus=[dict(type="buttons",
-                                                buttons=[dict(label="Play",
-                                                            method="animate",
-                                                            args=[None, {"frame": {"duration": 50, "redraw": True},
-                                                                            "fromcurrent": True}])])])
+
+        # Boutons Play/Pause
+        fig_anim.update_layout(
+            xaxis=dict(range=[x_smooth.min()*1.2, x_smooth.max()*1.2], title="x (m)"),
+            yaxis=dict(range=[y_smooth.min()*1.2, y_smooth.max()*1.2], title="y (m)"),
+            title="Animation de la particule suivant la trajectoire",
+            height=500,
+            width=500,
+            updatemenus=[dict(
+                type="buttons",
+                showactive=False,
+                buttons=[
+                    dict(label="▶️ Play",
+                        method="animate",
+                        args=[None, {"frame": {"duration": 20, "redraw": True},
+                                    "fromcurrent": True, "transition": {"duration": 0}}]),
+                    dict(label="⏸ Pause",
+                        method="animate",
+                        args=[[None], {"frame": {"duration": 0, "redraw": False},
+                                        "mode": "immediate",
+                                        "transition": {"duration": 0}}])
+                ]
+            )]
+        )
+
+        # Affichage dans Streamlit
         st.plotly_chart(fig_anim, use_container_width=True)
+
 
     st.divider()
 

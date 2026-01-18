@@ -258,52 +258,61 @@ def run_mouvement_circulaire_lab():
                 theta_deg = input_val
                 idx = (np.abs(np.array(results["theta"]) - theta_deg)).argmin()
                 st.write(f"v ≈ {v_arr[idx]:.3f} m/s, ω ≈ {omega_arr[idx]:.3f} rad/s")
-
-        # ---- Surprise 🎁 : Animation de la particule suivant la trajectoire lisse
-        st.subheader("🎬 Animation de la particule en rotation (smooth)")
+                
+        # ---- Surprise 🎁 : Animation circulaire physiquement correcte
+        st.subheader("🎬 Animation du mouvement circulaire (physiquement correcte)")
 
         from scipy.interpolate import CubicSpline
+        import plotly.graph_objects as go
 
         # ======================
         # Données expérimentales
         # ======================
         t_arr = np.array(df["t"])
-        x_arr = np.array(df["x"])
-        y_arr = np.array(df["y"])
+        theta_deg = np.array(df["theta"])
+        r = results.get("radius", 1.0)
 
-        # Sécurité : temps strictement croissant
+        # Sécurité : ordre temporel
         idx = np.argsort(t_arr)
-        t_arr, x_arr, y_arr = t_arr[idx], x_arr[idx], y_arr[idx]
+        t_arr = t_arr[idx]
+        theta_deg = theta_deg[idx]
+
+        # Conversion radians
+        theta_rad = np.deg2rad(theta_deg)
 
         # ======================
-        # Interpolation lisse
+        # Interpolation angulaire
         # ======================
-        t_smooth = np.linspace(t_arr.min(), t_arr.max(), 500)
-        cs_x = CubicSpline(t_arr, x_arr)
-        cs_y = CubicSpline(t_arr, y_arr)
+        t_smooth = np.linspace(t_arr.min(), t_arr.max(), 600)
+        cs_theta = CubicSpline(t_arr, theta_rad)
+        theta_smooth = cs_theta(t_smooth)
 
-        x_smooth = cs_x(t_smooth)
-        y_smooth = cs_y(t_smooth)
+        # ======================
+        # Reconstruction circulaire
+        # ======================
+        x_smooth = r * np.cos(theta_smooth)
+        y_smooth = r * np.sin(theta_smooth)
 
         # ======================
         # Limites propres
         # ======================
-        margin = 0.2 * max(np.ptp(x_smooth), np.ptp(y_smooth))
-        x_min, x_max = x_smooth.min() - margin, x_smooth.max() + margin
-        y_min, y_max = y_smooth.min() - margin, y_smooth.max() + margin
+        margin = 0.25 * r
+        x_min, x_max = -r - margin, r + margin
+        y_min, y_max = -r - margin, r + margin
 
         # ======================
         # Figure Plotly
         # ======================
         fig_anim = go.Figure()
 
-        # Trajectoire complète (fond)
+        # Cercle complet (référence)
+        theta_ref = np.linspace(0, 2*np.pi, 400)
         fig_anim.add_trace(go.Scatter(
-            x=x_smooth,
-            y=y_smooth,
+            x=r*np.cos(theta_ref),
+            y=r*np.sin(theta_ref),
             mode="lines",
-            line=dict(color="lightgray", width=2),
-            name="Trajectoire"
+            line=dict(color="lightgray", width=2, dash="dot"),
+            name="Cercle théorique"
         ))
 
         # Trajectoire parcourue + particule
@@ -317,12 +326,12 @@ def run_mouvement_circulaire_lab():
         ))
 
         # ======================
-        # Frames (animation)
+        # Frames
         # ======================
         frames = [
             go.Frame(
                 data=[
-                    go.Scatter(x=x_smooth, y=y_smooth),
+                    fig_anim.data[0],
                     go.Scatter(
                         x=x_smooth[:k+1],
                         y=y_smooth[:k+1]
@@ -336,10 +345,10 @@ def run_mouvement_circulaire_lab():
         fig_anim.frames = frames
 
         # ======================
-        # Layout & contrôles
+        # Layout & animation
         # ======================
         fig_anim.update_layout(
-            title="Animation de la particule suivant la trajectoire réelle",
+            title="Animation du mouvement circulaire — rayon constant",
             xaxis=dict(range=[x_min, x_max], title="x (m)", scaleanchor="y"),
             yaxis=dict(range=[y_min, y_max], title="y (m)"),
             height=520,
@@ -361,8 +370,7 @@ def run_mouvement_circulaire_lab():
                         method="animate",
                         args=[[None], {
                             "frame": {"duration": 0, "redraw": False},
-                            "mode": "immediate",
-                            "transition": {"duration": 0}
+                            "mode": "immediate"
                         }]
                     )
                 ]
@@ -370,6 +378,7 @@ def run_mouvement_circulaire_lab():
         )
 
         st.plotly_chart(fig_anim, use_container_width=True)
+
 
         st.divider()
 

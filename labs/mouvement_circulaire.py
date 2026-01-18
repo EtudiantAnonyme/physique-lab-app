@@ -264,79 +264,114 @@ def run_mouvement_circulaire_lab():
 
         from scipy.interpolate import CubicSpline
 
-        # Récupération des données
+        # ======================
+        # Données expérimentales
+        # ======================
         t_arr = np.array(df["t"])
         x_arr = np.array(df["x"])
         y_arr = np.array(df["y"])
 
-        # ---- Interpolation spline pour trajectoire lisse
+        # Sécurité : temps strictement croissant
+        idx = np.argsort(t_arr)
+        t_arr, x_arr, y_arr = t_arr[idx], x_arr[idx], y_arr[idx]
+
+        # ======================
+        # Interpolation lisse
+        # ======================
         t_smooth = np.linspace(t_arr.min(), t_arr.max(), 500)
         cs_x = CubicSpline(t_arr, x_arr)
         cs_y = CubicSpline(t_arr, y_arr)
+
         x_smooth = cs_x(t_smooth)
         y_smooth = cs_y(t_smooth)
 
-        # Gradient de couleur basé sur le temps
-        colors = t_smooth / t_smooth.max()
+        # ======================
+        # Limites propres
+        # ======================
+        margin = 0.2 * max(np.ptp(x_smooth), np.ptp(y_smooth))
+        x_min, x_max = x_smooth.min() - margin, x_smooth.max() + margin
+        y_min, y_max = y_smooth.min() - margin, y_smooth.max() + margin
 
-        # ---- Création du graphique Plotly
+        # ======================
+        # Figure Plotly
+        # ======================
         fig_anim = go.Figure()
 
-        # Trajectoire complète en gris clair
+        # Trajectoire complète (fond)
         fig_anim.add_trace(go.Scatter(
             x=x_smooth,
             y=y_smooth,
-            mode='lines',
-            line=dict(color='lightgray', width=2),
-            name='Trajectoire complète'
+            mode="lines",
+            line=dict(color="lightgray", width=2),
+            name="Trajectoire"
         ))
 
-        # Particule animée
+        # Trajectoire parcourue + particule
         fig_anim.add_trace(go.Scatter(
             x=[x_smooth[0]],
             y=[y_smooth[0]],
-            mode='markers',
-            marker=dict(size=12, color='red'),
-            name='Particule'
+            mode="lines+markers",
+            line=dict(color="crimson", width=3),
+            marker=dict(size=10),
+            name="Particule"
         ))
 
-        # ---- Frames pour l'animation
-        frames = [go.Frame(
-            data=[go.Scatter(x=[x_smooth[k]], y=[y_smooth[k]], mode='markers')],
-            name=str(k)
-        ) for k in range(len(t_smooth))]
+        # ======================
+        # Frames (animation)
+        # ======================
+        frames = [
+            go.Frame(
+                data=[
+                    go.Scatter(x=x_smooth, y=y_smooth),
+                    go.Scatter(
+                        x=x_smooth[:k+1],
+                        y=y_smooth[:k+1]
+                    )
+                ],
+                name=str(k)
+            )
+            for k in range(len(t_smooth))
+        ]
 
         fig_anim.frames = frames
 
-        # ---- Boutons Play / Pause
+        # ======================
+        # Layout & contrôles
+        # ======================
         fig_anim.update_layout(
-            xaxis=dict(range=[x_smooth.min()*1.2, x_smooth.max()*1.2], title="x (m)"),
-            yaxis=dict(range=[y_smooth.min()*1.2, y_smooth.max()*1.2], title="y (m)"),
-            title="Animation de la particule suivant la trajectoire lisse",
-            height=500,
-            width=500,
+            title="Animation de la particule suivant la trajectoire réelle",
+            xaxis=dict(range=[x_min, x_max], title="x (m)", scaleanchor="y"),
+            yaxis=dict(range=[y_min, y_max], title="y (m)"),
+            height=520,
             updatemenus=[dict(
                 type="buttons",
                 showactive=False,
                 buttons=[
-                    dict(label="▶️ Play",
+                    dict(
+                        label="▶️ Play",
                         method="animate",
-                        args=[None, {"frame": {"duration": 20, "redraw": True},
-                                    "fromcurrent": True, "transition": {"duration": 0}}]),
-                    dict(label="⏸ Pause",
+                        args=[None, {
+                            "frame": {"duration": 20, "redraw": True},
+                            "fromcurrent": True,
+                            "transition": {"duration": 0}
+                        }]
+                    ),
+                    dict(
+                        label="⏸ Pause",
                         method="animate",
-                        args=[[None], {"frame": {"duration": 0, "redraw": False},
-                                        "mode": "immediate",
-                                        "transition": {"duration": 0}}])
+                        args=[[None], {
+                            "frame": {"duration": 0, "redraw": False},
+                            "mode": "immediate",
+                            "transition": {"duration": 0}
+                        }]
+                    )
                 ]
             )]
         )
 
-        # Affichage dans Streamlit
         st.plotly_chart(fig_anim, use_container_width=True)
 
-
-    st.divider()
+        st.divider()
 
     # =======================
     # 4️⃣ Gestion des expériences enregistrées

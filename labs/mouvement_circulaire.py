@@ -258,12 +258,11 @@ def run_mouvement_circulaire_lab():
                 theta_deg = input_val
                 idx = (np.abs(np.array(results["theta"]) - theta_deg)).argmin()
                 st.write(f"v ≈ {v_arr[idx]:.3f} m/s, ω ≈ {omega_arr[idx]:.3f} rad/s")
-                
+
         # ---- Surprise 🎁 : Animation circulaire physiquement correcte
         st.subheader("🎬 Animation du mouvement circulaire (physiquement correcte)")
 
         from scipy.interpolate import CubicSpline
-        import plotly.graph_objects as go
 
         # ======================
         # Données expérimentales
